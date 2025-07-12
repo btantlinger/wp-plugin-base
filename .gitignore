@@ -1,0 +1,68 @@
+# Composer
+/vendor/
+composer.lock
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+error.log
+access.log
+
+.htaccess
+sitemap.xml
+sitemap.xml.gz
+
+# Testing
+/coverage/
+phpunit.xml
+.phpunit.result.cache
+/tests/tmp/
+
+# Build artifacts
+/build/
+/dist/
+*.min.js
+*.min.css
+
+# Node.js (if you use any frontend build tools)
+node_modules/
+npm-debug.log
+yarn-error.log
+.npm/
+.yarn/
+
+# Temporary files
+*.tmp
+*.temp
+/tmp/
+
+# Plugin specific
+*.zip
+*.tar.gz
+*.rar
+
+# Development tools
+.phpcs.xml
+.phpstan.neon
+.phpunit.xml
