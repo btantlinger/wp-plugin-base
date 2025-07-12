@@ -1,15 +1,18 @@
 <?php
 
-namespace WebMoves\PluginBase\Contracts;
+namespace WebMoves\PluginBase\Contracts\Hooks;
 
-interface HandlerManagerInterface {
+use WebMoves\PluginBase\Contracts\Hooks\HookHandlerInterface;
+
+interface HookHandlerManagerInterface {
 	/**
 	 * Register a handler
 	 *
-	 * @param HandlerInterface $handler
+	 * @param HookHandlerInterface $handler
+	 *
 	 * @return void
 	 */
-	public function register(HandlerInterface $handler): void;
+	public function register( HookHandlerInterface $handler): void;
 
 	/**
 	 * Initialize all registered handlers
@@ -21,7 +24,7 @@ interface HandlerManagerInterface {
 	/**
 	 * Get all registered handlers
 	 *
-	 * @return HandlerInterface[]
+	 * @return HookHandlerInterface[]
 	 */
 	public function get_handlers(): array;
 
@@ -30,7 +33,8 @@ interface HandlerManagerInterface {
 	 * Get handlers by class name
 	 *
 	 * @param string $class_name
-	 * @return HandlerInterface[]
+	 *
+	 * @return HookHandlerInterface[]
 	 */
 	public function get_handlers_by_class(string $class_name): array;
 

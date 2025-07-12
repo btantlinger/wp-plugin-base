@@ -1,11 +1,11 @@
 <?php
 
-namespace WebMoves\PluginBase\EventHandlers;
+namespace WebMoves\PluginBase\Hooks;
 
-use WebMoves\PluginBase\Contracts\HandlerInterface;
+use WebMoves\PluginBase\Contracts\Hooks\HookHandlerInterface;
 use WebMoves\PluginBase\HookManager;
 
-abstract class AbstractEventHandler implements HandlerInterface
+abstract class AbstractHookHandler implements HookHandlerInterface
 {
     protected HookManager $hook_manager;
     protected int $priority = 10;

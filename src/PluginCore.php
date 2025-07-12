@@ -5,8 +5,8 @@ namespace WebMoves\PluginBase;
 use DI\Container;
 use DI\ContainerBuilder;
 use WebMoves\PluginBase\Contracts\DatabaseManagerInterface;
-use WebMoves\PluginBase\Contracts\HandlerInterface;
-use WebMoves\PluginBase\Contracts\HandlerManagerInterface;
+use WebMoves\PluginBase\Contracts\Hooks\HookHandlerInterface;
+use WebMoves\PluginBase\Contracts\Hooks\HookHandlerManagerInterface;
 use WebMoves\PluginBase\Contracts\HookManagerInterface;
 use WebMoves\PluginBase\Contracts\PluginCoreInterface;
 
@@ -17,12 +17,27 @@ class PluginCore implements PluginCoreInterface
     private string $plugin_version;
     private string $plugin_name;
     private bool $initialized = false;
+    /**
+     * The plugin text domain
+     *
+     * @var string
+     */
+    private string $text_domain;
 
-    public function __construct(string $plugin_file, string $version = '1.0.0', string $plugin_name = null)
+    /**
+     * Constructor
+     *
+     * @param string $plugin_file The main plugin file path
+     * @param string $plugin_version The plugin version
+     * @param string|null $text_domain The plugin text domain (optional, will be derived from plugin name if not provided)
+     */
+    public function __construct(string $plugin_file, string $plugin_version, ?string $text_domain = null)
     {
         $this->plugin_file = $plugin_file;
-        $this->plugin_version = $version;
-        $this->plugin_name = $plugin_name ?? $this->extract_plugin_name($plugin_file);
+        $this->plugin_version = $plugin_version;
+        $this->plugin_name = $this->get_plugin_name();
+        $this->text_domain = $text_domain ?? $this->derive_text_domain();
+        
         $this->setup_container();
     }
 
@@ -57,6 +72,9 @@ class PluginCore implements PluginCoreInterface
             return;
         }
 
+	    // Load textdomain early for translations
+	    add_action('init', [$this, 'load_textdomain']);
+
         $hook_manager = $this->get_service(HookManagerInterface::class);
 
         // Register core WordPress hooks
@@ -85,6 +103,7 @@ class PluginCore implements PluginCoreInterface
             'plugin.file' => $this->plugin_file,
             'plugin.version' => $this->plugin_version,
             'plugin.name' => $this->plugin_name,
+            'plugin.text_domain' => $this->text_domain,
             'plugin.path' => plugin_dir_path($this->plugin_file),
             'plugin.url' => plugin_dir_url($this->plugin_file),
             // Add PluginCore instance to the container definitions
@@ -136,19 +155,21 @@ class PluginCore implements PluginCoreInterface
     /**
      * Register an event handler
      *
-     * @param HandlerInterface $handler
+     * @param \WebMoves\PluginBase\Contracts\Hooks\HookHandlerInterface $handler
+     *
      * @return void
      */
-    public function register_handler(HandlerInterface $handler): void
+    public function register_handler( HookHandlerInterface $handler): void
     {
-        $handler_manager = $this->get_service(HandlerManagerInterface::class);
+        $handler_manager = $this->get_service(HookHandlerManagerInterface::class);
         $handler_manager->register($handler);
     }
 
     /**
      * Register multiple event handlers
      *
-     * @param HandlerInterface[] $handlers
+     * @param HookHandlerInterface[] $handlers
+     *
      * @return void
      */
     public function register_handlers(array $handlers): void
@@ -166,7 +187,7 @@ class PluginCore implements PluginCoreInterface
     public function on_plugins_loaded(): void
     {
         $database_manager = $this->get_service(DatabaseManagerInterface::class);
-        $handler_manager = $this->get_service(HandlerManagerInterface::class);
+        $handler_manager = $this->get_service(HookHandlerManagerInterface::class);
 
         $database_manager->maybe_upgrade();
         $handler_manager->initialize_handlers();
@@ -254,5 +275,40 @@ class PluginCore implements PluginCoreInterface
     public function get_plugin_file(): string
     {
         return $this->plugin_file;
+    }
+
+    /**
+     * Get the plugin text domain
+     *
+     * @return string
+     */
+    public function get_text_domain(): string
+    {
+        return $this->text_domain;
+    }
+
+    /**
+     * Derive text domain from plugin name
+     * Converts plugin name to lowercase, replaces spaces with hyphens
+     *
+     * @return string
+     */
+    private function derive_text_domain(): string
+    {
+        return sanitize_title($this->plugin_name);
+    }
+
+    /**
+     * Load plugin textdomain for translations
+     *
+     * @return void
+     */
+    public function load_textdomain(): void
+    {
+        load_plugin_textdomain(
+            $this->text_domain,
+            false,
+            dirname(plugin_basename($this->plugin_file)) . '/languages'
+        );
     }
 }

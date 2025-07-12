@@ -1,12 +1,12 @@
 <?php
 
-namespace WebMoves\PluginBase\EventHandlers;
+namespace WebMoves\PluginBase\Hooks;
 
-use WebMoves\PluginBase\Contracts\HandlerInterface;
-use WebMoves\PluginBase\Contracts\HandlerManagerInterface;
+use WebMoves\PluginBase\Contracts\Hooks\HookHandlerInterface;
+use WebMoves\PluginBase\Contracts\Hooks\HookHandlerManagerInterface;
 use WebMoves\PluginBase\HookManager;
 
-class HandlerManager implements HandlerManagerInterface
+class HookHandlerManager implements HookHandlerManagerInterface
 {
     private HookManager $hook_manager;
     private array $handlers = [];
@@ -20,10 +20,11 @@ class HandlerManager implements HandlerManagerInterface
     /**
      * Register a handler
      *
-     * @param HandlerInterface $handler
+     * @param \WebMoves\PluginBase\Contracts\Hooks\HookHandlerInterface $handler
+     *
      * @return void
      */
-    public function register(HandlerInterface $handler): void
+    public function register( HookHandlerInterface $handler): void
     {
         $this->handlers[] = $handler;
 
@@ -45,7 +46,7 @@ class HandlerManager implements HandlerManagerInterface
         }
 
         // Sort handlers by priority
-        usort($this->handlers, function (HandlerInterface $a, HandlerInterface $b) {
+        usort($this->handlers, function ( HookHandlerInterface $a, HookHandlerInterface $b) {
             return $a->get_priority() <=> $b->get_priority();
         });
 
@@ -60,10 +61,11 @@ class HandlerManager implements HandlerManagerInterface
     /**
      * Register a single handler
      *
-     * @param HandlerInterface $handler
+     * @param \WebMoves\PluginBase\Contracts\Hooks\HookHandlerInterface $handler
+     *
      * @return void
      */
-    private function register_single_handler(HandlerInterface $handler): void
+    private function register_single_handler( HookHandlerInterface $handler): void
     {
         if (!$handler->should_load()) {
             return;
@@ -83,7 +85,7 @@ class HandlerManager implements HandlerManagerInterface
     /**
      * Get all registered handlers
      *
-     * @return HandlerInterface[]
+     * @return \WebMoves\PluginBase\Contracts\Hooks\HookHandlerInterface[]
      */
     public function get_handlers(): array
     {
@@ -94,11 +96,12 @@ class HandlerManager implements HandlerManagerInterface
      * Get handlers by class name
      *
      * @param string $class_name
-     * @return HandlerInterface[]
+     *
+     * @return \WebMoves\PluginBase\Contracts\Hooks\HookHandlerInterface[]
      */
     public function get_handlers_by_class(string $class_name): array
     {
-        return array_filter($this->handlers, function (HandlerInterface $handler) use ($class_name) {
+        return array_filter($this->handlers, function (HookHandlerInterface $handler) use ($class_name) {
             return is_a($handler, $class_name);
         });
     }
@@ -129,7 +132,7 @@ class HandlerManager implements HandlerManagerInterface
     public function remove_handler(string $class_name): bool
     {
         $removed = false;
-        $this->handlers = array_filter($this->handlers, function (HandlerInterface $handler) use ($class_name, &$removed) {
+        $this->handlers = array_filter($this->handlers, function (HookHandlerInterface $handler) use ($class_name, &$removed) {
             if (is_a($handler, $class_name)) {
                 $removed = true;
                 return false;

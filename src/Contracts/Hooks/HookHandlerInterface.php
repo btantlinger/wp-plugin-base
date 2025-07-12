@@ -1,8 +1,8 @@
 <?php
 
-namespace WebMoves\PluginBase\Contracts;
+namespace WebMoves\PluginBase\Contracts\Hooks;
 
-interface HandlerInterface
+interface HookHandlerInterface
 {
     /**
      * Register WordPress hooks for this handler
