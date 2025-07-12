@@ -64,7 +64,7 @@ class TemplateRenderer implements TemplateRendererInterface
     /**
      * Check if a template exists
      */
-    public function template_exists(string $template): bool
+    public function exists(string $template): bool
     {
         return $this->get_template_path($template) !== false;
     }

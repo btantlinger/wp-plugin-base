@@ -3,11 +3,13 @@
 use WebMoves\PluginBase\Contracts\DatabaseManagerInterface;
 use WebMoves\PluginBase\Contracts\Hooks\HookHandlerManagerInterface;
 use WebMoves\PluginBase\Contracts\HookManagerInterface;
+use WebMoves\PluginBase\Contracts\Settings\SettingsManagerFactoryInterface;
 use WebMoves\PluginBase\DatabaseManager;
 use WebMoves\PluginBase\Hooks\HookHandlerManager;
 use WebMoves\PluginBase\HookManager;
 use WebMoves\PluginBase\Contracts\Templates\TemplateRendererInterface;
 use WebMoves\PluginBase\Templates\TemplateRenderer;
+use WebMoves\PluginBase\Settings\SettingsManagerFactory;
 use function DI\create;
 use function DI\get;
 
@@ -19,6 +21,9 @@ return [
 
 	HookHandlerManagerInterface::class => create(HookHandlerManager::class)
         ->constructor(get(HookManagerInterface::class)),
+
+	// Settings Manager Factory
+	SettingsManagerFactoryInterface::class => create(SettingsManagerFactory::class),
 
 	// Templates renderer with proper plugin-specific configuration
 	TemplateRendererInterface::class => function ($container) {

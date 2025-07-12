@@ -6,6 +6,8 @@ interface SettingsProvider
 {
 
 
+	public function settings(): SettingsManagerInterface;
+
     /**
      * Get the settings configuration for this synchronizer
      *
