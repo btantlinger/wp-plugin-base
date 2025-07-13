@@ -37,12 +37,14 @@ class BasicSettingsBuilder extends AbstractSettingBuilder
 		$field_key = $args['field_key'];
 		$field_name = $args['field_name'];
 
-		$value = $provider->settings()->get_scoped_option($field_key, $field['default'] ?? null);
+		//$value = $provider->settings()->get_scoped_option($field_key, $field['default'] ?? null);
+		$value = $this->get_field_display_value($provider, $field_key, $field['default'] ?? '');
+
 
 		// Build attributes
 		$attributes = $field['attributes'] ?? [];
 		if (!empty($field['required'])) {
-			$attributes['required'] = 'required';
+			//$attributes['required'] = 'required';
 		}
 
 		$attribute_string = $this->build_attribute_string($attributes);
@@ -69,7 +71,8 @@ class BasicSettingsBuilder extends AbstractSettingBuilder
 		}
 
 		if (!empty($field['description'])) {
-			echo '<p class="description">' . esc_html($field['description']) . '</p>';
+			$tag = $field['type'] == 'checkbox' ? 'span' : 'p';
+			echo '<' . $tag . ' class="description">' . esc_html($field['description']) . '<' . $tag . '/>';
 		}
 	}
 

@@ -12,9 +12,11 @@ use WebMoves\PluginBase\Templates\TemplateRenderer;
 use WebMoves\PluginBase\Settings\SettingsManagerFactory;
 use function DI\create;
 use function DI\get;
+use function DI\autowire;
+use function DI\factory;
 
 return [
-	HookManagerInterface::class => create(HookManager::class),
+	HookManagerInterface::class => autowire(HookManager::class),
 
 	DatabaseManagerInterface::class => create(DatabaseManager::class)
         ->constructor(get('plugin.version'), get('plugin.name')),
@@ -23,7 +25,7 @@ return [
         ->constructor(get(HookManagerInterface::class)),
 
 	// Settings Manager Factory
-	SettingsManagerFactoryInterface::class => create(SettingsManagerFactory::class),
+	SettingsManagerFactoryInterface::class => autowire(SettingsManagerFactory::class),
 
 	// Templates renderer with proper plugin-specific configuration
 	TemplateRendererInterface::class => function ($container) {

@@ -90,9 +90,12 @@ abstract class AbstractSettingBuilder implements \WebMoves\PluginBase\Contracts\
 
 		// Register fields for display
 		foreach ($fields as $field_key => $field_config) {
+
+			$required = !empty($field_config['required']);
+
 			add_settings_field(
 				$field_key,
-				$field_config['label'],
+				$field_config['label']  . ($required ? ' <span class="required" style="color:crimson;">*</span>' : ''),
 				[$this, 'render_settings_field'],
 				$this->page,
 				$section['id'],
@@ -136,7 +139,7 @@ abstract class AbstractSettingBuilder implements \WebMoves\PluginBase\Contracts\
 			$sanitized[$field_key] = $sanitized_value;
 		}
 
-		// If there are errors, add them to settings errors and return original values
+		// If there are errors, preserve user input in session
 		if (!empty($errors)) {
 			foreach ($errors as $field_key => $error_message) {
 				add_settings_error(
@@ -147,10 +150,15 @@ abstract class AbstractSettingBuilder implements \WebMoves\PluginBase\Contracts\
 				);
 			}
 
-			// Return original values from database (no changes saved!)
+			// ✅ Store as flash data - will survive ONE request only
+			$this->store_flash_data($provider, $sanitized);
+
+			// Return existing values (no save), but form will show user input
 			return $provider->settings()->get_all_scoped_options();
 		}
 
+		// ✅ SUCCESS - clear any flash data and save
+		$this->clear_flash_data($provider);
 		return $sanitized;
 	}
 
@@ -176,52 +184,89 @@ abstract class AbstractSettingBuilder implements \WebMoves\PluginBase\Contracts\
 		}
 	}
 
-
-	/*
-
-	public function render_settings_field(array $args): void
+	/**
+	 * Store user input as flash data (survives exactly one request)
+	 */
+	private function store_flash_data(SettingsProvider $provider, array $input): void
 	{
-		$field = $args['field'];
-		$provider = $args['provider'];
-		$field_key = $args['field_key'];
-		$field_name = $args['field_name'];
-
-		$value = $provider->settings()->get_scoped_option($field_key, $field['default'] ?? null);
-
-		// Build attributes
-		$attributes = $field['attributes'] ?? [];
-		if (!empty($field['required'])) {
-			$attributes['required'] = 'required';
+		$user_id = get_current_user_id();
+		if (!$user_id) {
+			return;
 		}
 
-		$attribute_string = $this->build_attribute_string($attributes);
+		$flash_key = $this->get_flash_key($provider);
 
-		switch ($field['type']) {
-			case 'text':
-			case 'email':
-			case 'url':
-			case 'number':
-				$this->render_input_field($field, $field_name, $value, $attribute_string);
-				break;
-
-			case 'textarea':
-				$this->render_textarea_field($field_name, $value, $attribute_string);
-				break;
-
-			case 'checkbox':
-				$this->render_checkbox_field($field_name, $value, $attribute_string);
-				break;
-
-			case 'select':
-				$this->render_select_field($field, $field_name, $value, $attribute_string);
-				break;
-		}
-
-		if (!empty($field['description'])) {
-			echo '<p class="description">' . esc_html($field['description']) . '</p>';
-		}
+		// Store with flash flag
+		update_user_meta($user_id, $flash_key, [
+			'data' => $input,
+			'is_flash' => true,
+			'timestamp' => time()
+		]);
 	}
-	*/
 
+	/**
+	 * Get flash data (and mark it for deletion)
+	 */
+	private function get_flash_data(SettingsProvider $provider): ?array
+	{
+		$user_id = get_current_user_id();
+		if (!$user_id) {
+			return null;
+		}
 
+		$flash_key = $this->get_flash_key($provider);
+		$flash_data = get_user_meta($user_id, $flash_key, true);
+
+		if ($flash_data && isset($flash_data['is_flash']) && $flash_data['is_flash']) {
+			// Mark for deletion at end of request
+			add_action('wp_footer', function() use ($user_id, $flash_key) {
+				delete_user_meta($user_id, $flash_key);
+			});
+			add_action('admin_footer', function() use ($user_id, $flash_key) {
+				delete_user_meta($user_id, $flash_key);
+			});
+
+			return $flash_data['data'];
+		}
+
+		return null;
+	}
+
+	/**
+	 * Clear flash data immediately
+	 */
+	private function clear_flash_data(SettingsProvider $provider): void
+	{
+		$user_id = get_current_user_id();
+		if (!$user_id) {
+			return;
+		}
+
+		$flash_key = $this->get_flash_key($provider);
+		delete_user_meta($user_id, $flash_key);
+	}
+
+	/**
+	 * Get flash data key
+	 */
+	private function get_flash_key(SettingsProvider $provider): string
+	{
+		return 'flash_settings_' . $this->settingsGroup . '_' . $provider->settings()->get_settings_scope();
+	}
+
+	/**
+	 * Get the value to display in the form field
+	 */
+	protected function get_field_display_value(SettingsProvider $provider, string $field_key, $default_value)
+	{
+		// Check for flash data first
+		$flash_data = $this->get_flash_data($provider);
+
+		if ($flash_data !== null && isset($flash_data[$field_key])) {
+			return $flash_data[$field_key];
+		}
+
+		// Fall back to saved value or default
+		return $provider->settings()->get_scoped_option($field_key, $default_value);
+	}
 }

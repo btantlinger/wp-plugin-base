@@ -34,7 +34,7 @@ function wm_plugin_base_init() {
     static $plugin_core = null;
     
     if ($plugin_core === null) {
-        $plugin_core = new \WebMoves\PluginBase\PluginCore(WM_PLUGIN_BASE_FILE, WM_PLUGIN_BASE_VERSION);
+        $plugin_core = new \WebMoves\PluginBase\PluginCore(WM_PLUGIN_BASE_FILE,  "test-plug", WM_PLUGIN_BASE_VERSION);
         $plugin_core->initialize();
         
         // Make plugin core available globally
@@ -51,3 +51,10 @@ wm_plugin_base_init();
 function wm_plugin_base(): \WebMoves\PluginBase\PluginCore {
     return $GLOBALS['wm_plugin_base'];
 }
+
+
+// Add after the existing initialization
+add_action('plugins_loaded', function() {
+	// Initialize test plugin
+	$test_plugin = new \WebMoves\PluginBase\Examples\TestPlugin(wm_plugin_base());
+});

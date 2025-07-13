@@ -35,7 +35,7 @@ class PluginCore implements PluginCoreInterface
     {
         $this->plugin_file = $plugin_file;
         $this->plugin_version = $plugin_version;
-        $this->plugin_name = $this->get_plugin_name();
+        $this->plugin_name = $this->extract_plugin_name($plugin_file);
         $this->text_domain = $text_domain ?? $this->derive_text_domain();
         
         $this->setup_container();
@@ -56,7 +56,7 @@ class PluginCore implements PluginCoreInterface
         if (strpos($plugin_dir, 'plugins') !== false) {
             return $plugin_name;
         }
-        
+
         // Fallback to 'plugin-base'
         return 'plugin-base';
     }
@@ -89,6 +89,10 @@ class PluginCore implements PluginCoreInterface
         $this->initialized = true;
     }
 
+	public function get_plugin_base_dir(): string {
+		return dirname($this->plugin_file);
+	}
+
     /**
      * Setup the DI container
      *
@@ -96,6 +100,7 @@ class PluginCore implements PluginCoreInterface
      */
     private function setup_container(): void
     {
+
         $builder = new ContainerBuilder();
         
         // 1. Add plugin-specific definitions FIRST (foundation values)
@@ -111,18 +116,22 @@ class PluginCore implements PluginCoreInterface
             PluginCore::class => $this,
         ]);
 
-        // 2. Load core framework dependencies (depends on plugin values)
-        $core_dependencies_file = __DIR__ . '/../core-dependencies.php';
+        // Load core framework dependencies
+        $core_dependencies_file = rtrim($this->get_plugin_base_dir(), '/') . '/config/core-dependencies.php';
         if (file_exists($core_dependencies_file)) {
             $core_dependencies = require $core_dependencies_file;
             $builder->addDefinitions($core_dependencies);
+        } else {
+			throw new \Exception('Plugin core dependencies file not found');
         }
 
-        // 3. Load user dependencies last (can override anything)
-        $user_dependencies_file = __DIR__ . '/../dependencies.php';
+        // Load user dependencies last
+        $user_dependencies_file = rtrim($this->get_plugin_base_dir(), '/') . '/config/dependencies.php';
         if (file_exists($user_dependencies_file)) {
             $user_dependencies = require $user_dependencies_file;
             $builder->addDefinitions($user_dependencies);
+        } else {
+			throw new \Exception('Plugin dependencies file not found');
         }
 
         // Build the container with all definitions
@@ -149,7 +158,7 @@ class PluginCore implements PluginCoreInterface
      */
     public function get_service(string $id)
     {
-        return $this->container->get($id);
+		return $this->container->get( $id );
     }
 
     /**

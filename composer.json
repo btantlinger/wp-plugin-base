@@ -23,7 +23,9 @@
     },
     "autoload": {
         "psr-4": {
-            "WebMoves\\PluginBase\\": "src/"
+            "WebMoves\\PluginBase\\": "src/",
+            "WebMoves\\PluginBase\\Examples\\": "examples/test-plugin"
+
         }
     },
     "autoload-dev": {
