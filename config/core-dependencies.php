@@ -1,31 +1,50 @@
 <?php
 
 use WebMoves\PluginBase\Contracts\DatabaseManagerInterface;
-use WebMoves\PluginBase\Contracts\Hooks\HookHandlerManagerInterface;
-use WebMoves\PluginBase\Contracts\HookManagerInterface;
+use WebMoves\PluginBase\Contracts\Hooks\ComponentManagerInterface;
 use WebMoves\PluginBase\Contracts\Settings\SettingsManagerFactoryInterface;
 use WebMoves\PluginBase\DatabaseManager;
-use WebMoves\PluginBase\Hooks\HookHandlerManager;
-use WebMoves\PluginBase\HookManager;
+use WebMoves\PluginBase\Hooks\ComponentManager;
 use WebMoves\PluginBase\Contracts\Templates\TemplateRendererInterface;
 use WebMoves\PluginBase\Templates\TemplateRenderer;
 use WebMoves\PluginBase\Settings\SettingsManagerFactory;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+use Monolog\Handler\ErrorLogHandler;
+use Psr\Log\LoggerInterface;
 use function DI\create;
 use function DI\get;
 use function DI\autowire;
 use function DI\factory;
 
 return [
-	HookManagerInterface::class => autowire(HookManager::class),
+
+
 
 	DatabaseManagerInterface::class => create(DatabaseManager::class)
         ->constructor(get('plugin.version'), get('plugin.name')),
 
-	HookHandlerManagerInterface::class => create(HookHandlerManager::class)
-        ->constructor(get(HookManagerInterface::class)),
+	ComponentManagerInterface::class => autowire(ComponentManager::class),
+
 
 	// Settings Manager Factory
 	SettingsManagerFactoryInterface::class => autowire(SettingsManagerFactory::class),
+
+	// Logger configuration
+	LoggerInterface::class => factory(function ($container) {
+		$logger = new Logger($container->get('plugin.name'));
+		
+		// In WordPress, log to wp-content/debug.log if WP_DEBUG_LOG is enabled
+		if (defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
+			$log_file = WP_CONTENT_DIR . '/debug.log';
+			$logger->pushHandler(new StreamHandler($log_file, Logger::DEBUG));
+		}
+		
+		// Always log errors to PHP error log as fallback
+		$logger->pushHandler(new ErrorLogHandler(ErrorLogHandler::OPERATING_SYSTEM, Logger::ERROR));
+		
+		return $logger;
+	}),
 
 	// Templates renderer with proper plugin-specific configuration
 	TemplateRendererInterface::class => function ($container) {

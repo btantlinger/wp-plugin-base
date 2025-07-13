@@ -2,10 +2,10 @@
 
 namespace WebMoves\PluginBase\Examples\Hooks;
 
-use WebMoves\PluginBase\Contracts\Hooks\HookHandlerInterface;
+use WebMoves\PluginBase\Contracts\Hooks\ComponentInterface;
 use WebMoves\PluginBase\Settings\BasicSettingsBuilder;
 
-class AdminMenuHandler implements HookHandlerInterface
+class AdminMenuHandler implements ComponentInterface
 {
 	private BasicSettingsBuilder $settings_builder;
 
@@ -14,7 +14,7 @@ class AdminMenuHandler implements HookHandlerInterface
 		$this->settings_builder = $settings_builder;
 	}
 
-	public function register_hooks(): void
+	public function register(): void
 	{
 		add_action('admin_menu', [$this, 'add_admin_menu']);
 	}
@@ -39,7 +39,7 @@ class AdminMenuHandler implements HookHandlerInterface
 		return 10;
 	}
 
-	public function should_load(): bool {
+	public function can_register(): bool {
 		return true;
 	}
 }

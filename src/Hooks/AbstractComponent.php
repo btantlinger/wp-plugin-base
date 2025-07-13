@@ -2,18 +2,18 @@
 
 namespace WebMoves\PluginBase\Hooks;
 
-use WebMoves\PluginBase\Contracts\Hooks\HookHandlerInterface;
+use WebMoves\PluginBase\Contracts\Hooks\ComponentInterface;
 use WebMoves\PluginBase\HookManager;
 
-abstract class AbstractHookHandler implements HookHandlerInterface
+abstract class AbstractComponent implements ComponentInterface
 {
-    protected HookManager $hook_manager;
+
     protected int $priority = 10;
     protected bool $should_load = true;
 
-    public function __construct(HookManager $hook_manager)
+    public function __construct()
     {
-        $this->hook_manager = $hook_manager;
+
     }
 
     /**
@@ -31,7 +31,7 @@ abstract class AbstractHookHandler implements HookHandlerInterface
      *
      * @return bool
      */
-    public function should_load(): bool
+    public function can_register(): bool
     {
         return $this->should_load;
     }
@@ -47,7 +47,7 @@ abstract class AbstractHookHandler implements HookHandlerInterface
      */
     protected function add_action(string $hook, string $method, int $priority = 10, int $accepted_args = 1): void
     {
-        $this->hook_manager->add_action($hook, [$this, $method], $priority, $accepted_args);
+        add_action($hook, [$this, $method], $priority, $accepted_args);
     }
 
     /**
@@ -61,7 +61,7 @@ abstract class AbstractHookHandler implements HookHandlerInterface
      */
     protected function add_filter(string $hook, string $method, int $priority = 10, int $accepted_args = 1): void
     {
-        $this->hook_manager->add_filter($hook, [$this, $method], $priority, $accepted_args);
+        add_filter($hook, [$this, $method], $priority, $accepted_args);
     }
 
     /**
@@ -73,7 +73,7 @@ abstract class AbstractHookHandler implements HookHandlerInterface
      */
     protected function add_shortcode(string $tag, string $method): void
     {
-        $this->hook_manager->add_shortcode($tag, [$this, $method]);
+        add_shortcode($tag, [$this, $method]);
     }
 
     /**

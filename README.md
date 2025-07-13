@@ -19,9 +19,9 @@ A modern WordPress plugin development framework using hooks, dependency injectio
 
 namespace MyPlugin\Hooks;
 
-use WebMoves\PluginBase\Hooks\AbstractHookHandler;
+use WebMoves\PluginBase\Hooks\AbstractComponent;
 
-class AdminHookHandler extends AbstractHookHandler
+class AdminHookHandler extends AbstractComponent
 {
     public function register_hooks(): void
     {
@@ -46,7 +46,7 @@ class AdminHookHandler extends AbstractHookHandler
 ```php
 // In your main plugin file
 $plugin = wm_plugin_base();
-$plugin->register_handler(new AdminHookHandler($plugin->get_service(HookManager::class)));
+$plugin->register_component(new AdminHookHandler($plugin->get_service(HookManager::class)));
 ```
 
 ## Settings Management

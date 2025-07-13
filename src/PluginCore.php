@@ -5,9 +5,8 @@ namespace WebMoves\PluginBase;
 use DI\Container;
 use DI\ContainerBuilder;
 use WebMoves\PluginBase\Contracts\DatabaseManagerInterface;
-use WebMoves\PluginBase\Contracts\Hooks\HookHandlerInterface;
-use WebMoves\PluginBase\Contracts\Hooks\HookHandlerManagerInterface;
-use WebMoves\PluginBase\Contracts\HookManagerInterface;
+use WebMoves\PluginBase\Contracts\Hooks\ComponentInterface;
+use WebMoves\PluginBase\Contracts\Hooks\ComponentManagerInterface;
 use WebMoves\PluginBase\Contracts\PluginCoreInterface;
 
 class PluginCore implements PluginCoreInterface
@@ -75,12 +74,10 @@ class PluginCore implements PluginCoreInterface
 	    // Load textdomain early for translations
 	    add_action('init', [$this, 'load_textdomain']);
 
-        $hook_manager = $this->get_service(HookManagerInterface::class);
-
         // Register core WordPress hooks
-        $hook_manager->add_action('plugins_loaded', [$this, 'on_plugins_loaded']);
-        $hook_manager->add_action('init', [$this, 'on_init']);
-        $hook_manager->add_action('admin_init', [$this, 'on_admin_init']);
+        add_action('plugins_loaded', [$this, 'on_plugins_loaded']);
+        add_action('init', [$this, 'on_init']);
+        add_action('admin_init', [$this, 'on_admin_init']);
 
         // Register activation/deactivation hooks
         register_activation_hook($this->plugin_file, [$this, 'on_activation']);
@@ -164,27 +161,27 @@ class PluginCore implements PluginCoreInterface
     /**
      * Register an event handler
      *
-     * @param \WebMoves\PluginBase\Contracts\Hooks\HookHandlerInterface $handler
+     * @param \WebMoves\PluginBase\Contracts\Hooks\ComponentInterface $handler
      *
      * @return void
      */
-    public function register_handler( HookHandlerInterface $handler): void
+    public function register_component( ComponentInterface $handler): void
     {
-        $handler_manager = $this->get_service(HookHandlerManagerInterface::class);
-        $handler_manager->register($handler);
+        $component_manager = $this->get_service(ComponentManagerInterface::class);
+        $component_manager->register_component($handler);
     }
 
     /**
      * Register multiple event handlers
      *
-     * @param HookHandlerInterface[] $handlers
+     * @param ComponentInterface[] $handlers
      *
      * @return void
      */
     public function register_handlers(array $handlers): void
     {
         foreach ($handlers as $handler) {
-            $this->register_handler($handler);
+            $this->register_component($handler);
         }
     }
 
@@ -196,7 +193,7 @@ class PluginCore implements PluginCoreInterface
     public function on_plugins_loaded(): void
     {
         $database_manager = $this->get_service(DatabaseManagerInterface::class);
-        $handler_manager = $this->get_service(HookHandlerManagerInterface::class);
+        $handler_manager = $this->get_service(ComponentManagerInterface::class);
 
         $database_manager->maybe_upgrade();
         $handler_manager->initialize_handlers();

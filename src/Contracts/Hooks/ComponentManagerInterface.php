@@ -2,17 +2,17 @@
 
 namespace WebMoves\PluginBase\Contracts\Hooks;
 
-use WebMoves\PluginBase\Contracts\Hooks\HookHandlerInterface;
+use WebMoves\PluginBase\Contracts\Hooks\ComponentInterface;
 
-interface HookHandlerManagerInterface {
+interface ComponentManagerInterface {
 	/**
 	 * Register a handler
 	 *
-	 * @param HookHandlerInterface $handler
+	 * @param ComponentInterface $component
 	 *
 	 * @return void
 	 */
-	public function register( HookHandlerInterface $handler): void;
+	public function register_component( ComponentInterface $component): void;
 
 	/**
 	 * Initialize all registered handlers
@@ -24,9 +24,9 @@ interface HookHandlerManagerInterface {
 	/**
 	 * Get all registered handlers
 	 *
-	 * @return HookHandlerInterface[]
+	 * @return ComponentInterface[]
 	 */
-	public function get_handlers(): array;
+	public function get_components(): array;
 
 
 	/**
@@ -34,9 +34,9 @@ interface HookHandlerManagerInterface {
 	 *
 	 * @param string $class_name
 	 *
-	 * @return HookHandlerInterface[]
+	 * @return ComponentInterface[]
 	 */
-	public function get_handlers_by_class(string $class_name): array;
+	public function get_components_by_class(string $class_name): array;
 
 	/**
 	 * Check if handler is registered
@@ -44,7 +44,7 @@ interface HookHandlerManagerInterface {
 	 * @param string $class_name
 	 * @return bool
 	 */
-	public function has_handler(string $class_name): bool;
+	public function has_component(string $class_name): bool;
 
 	/**
 	 * Remove a handler by class name
@@ -52,6 +52,6 @@ interface HookHandlerManagerInterface {
 	 * @param string $class_name
 	 * @return bool
 	 */
-	public function remove_handler(string $class_name): bool;
+	public function remove_component(string $class_name): bool;
 
 }

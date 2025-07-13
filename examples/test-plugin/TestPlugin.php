@@ -40,7 +40,7 @@ class TestPlugin
     private function init_hooks(): void
     {
         // Register admin menu handler
-        $this->core->register_handler(new AdminMenuHandler($this->settings_builder));
+        $this->core->register_component(new AdminMenuHandler($this->settings_builder));
     }
 
     public function get_settings_builder(): BasicSettingsBuilder
