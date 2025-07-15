@@ -16,6 +16,7 @@ class AdminMenuHandler implements ComponentInterface
 
 	public function register(): void
 	{
+		//$this->settings_builder->register();
 		add_action('admin_menu', [$this, 'add_admin_menu']);
 	}
 
@@ -40,6 +41,6 @@ class AdminMenuHandler implements ComponentInterface
 	}
 
 	public function can_register(): bool {
-		return true;
+		return is_admin();
 	}
 }

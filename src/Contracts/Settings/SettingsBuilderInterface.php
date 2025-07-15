@@ -2,7 +2,9 @@
 
 namespace WebMoves\PluginBase\Contracts\Settings;
 
-interface SettingsBuilderInterface
+use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
+
+interface SettingsBuilderInterface extends ComponentInterface
 {
     /**
      * Add a settings provider to the builder
@@ -12,20 +14,6 @@ interface SettingsBuilderInterface
      */
     public function add_provider(SettingsProvider $provider): void;
 
-    /**
-     * Initialize the settings builder (register WordPress hooks)
-     *
-     * @return void
-     */
-    public function init(): void;
-
-    /**
-     * Register all settings with WordPress
-     * (Called by WordPress admin_init hook)
-     *
-     * @return void
-     */
-    public function register_settings(): void;
 
     /**
      * Render a single settings field

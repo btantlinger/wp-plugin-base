@@ -38,7 +38,7 @@ class ComponentManager implements ComponentManagerInterface
      *
      * @return void
      */
-    public function initialize_handlers(): void
+    public function initialize_components(): void
     {
         if ($this->initialized) {
             return;

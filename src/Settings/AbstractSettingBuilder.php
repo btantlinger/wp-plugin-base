@@ -2,6 +2,7 @@
 
 namespace WebMoves\PluginBase\Settings;
 
+use WebMoves\PluginBase\Contracts\PluginCoreInterface;
 use WebMoves\PluginBase\Contracts\Settings\SettingsProvider;
 
 abstract class AbstractSettingBuilder implements \WebMoves\PluginBase\Contracts\Settings\SettingsBuilderInterface
@@ -11,11 +12,11 @@ abstract class AbstractSettingBuilder implements \WebMoves\PluginBase\Contracts\
 	private array $providers = [];
 	private string $text_domain;
 
-	public function __construct(string $settingsGroup, string $page, string $textDomain = 'wm-plugin-base')
+	public function __construct(PluginCoreInterface $core, string $settingsGroup, string $page)
 	{
 		$this->settingsGroup = $settingsGroup;
 		$this->page = $page;
-		$this->text_domain = $textDomain;
+		$this->text_domain = $core->get_text_domain();;
 	}
 
 	protected function get_settings_group(): string
@@ -28,11 +29,6 @@ abstract class AbstractSettingBuilder implements \WebMoves\PluginBase\Contracts\
 		return $this->page;
 	}
 
-	protected function get_text_domain(): string
-	{
-		return $this->text_domain;
-	}
-
 	protected function get_providers(): array
 	{
 		return $this->providers;
@@ -43,7 +39,7 @@ abstract class AbstractSettingBuilder implements \WebMoves\PluginBase\Contracts\
 		$this->providers[] = $provider;
 	}
 
-	public function init(): void
+	public function register(): void
 	{
 		add_action('admin_init', [$this, 'register_settings']);
 	}
@@ -92,7 +88,6 @@ abstract class AbstractSettingBuilder implements \WebMoves\PluginBase\Contracts\
 		foreach ($fields as $field_key => $field_config) {
 
 			$required = !empty($field_config['required']);
-
 			add_settings_field(
 				$field_key,
 				$field_config['label']  . ($required ? ' <span class="required" style="color:crimson;">*</span>' : ''),
@@ -268,5 +263,13 @@ abstract class AbstractSettingBuilder implements \WebMoves\PluginBase\Contracts\
 
 		// Fall back to saved value or default
 		return $provider->settings()->get_scoped_option($field_key, $default_value);
+	}
+
+	public function get_priority(): int {
+		return 10;
+	}
+
+	public function can_register(): bool {
+		return is_admin() && current_user_can('manage_options');
 	}
 }

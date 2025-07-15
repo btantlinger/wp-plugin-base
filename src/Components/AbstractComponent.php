@@ -6,7 +6,6 @@ use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
 
 abstract class AbstractComponent implements ComponentInterface
 {
-
     protected int $priority = 10;
     protected bool $should_load = true;
 
@@ -35,45 +34,6 @@ abstract class AbstractComponent implements ComponentInterface
         return $this->should_load;
     }
 
-    /**
-     * Add an action hook
-     *
-     * @param string $hook Hook name
-     * @param string $method Method name to call
-     * @param int $priority Priority
-     * @param int $accepted_args Number of arguments
-     * @return void
-     */
-    protected function add_action(string $hook, string $method, int $priority = 10, int $accepted_args = 1): void
-    {
-        add_action($hook, [$this, $method], $priority, $accepted_args);
-    }
-
-    /**
-     * Add a filter hook
-     *
-     * @param string $hook Hook name
-     * @param string $method Method name to call
-     * @param int $priority Priority
-     * @param int $accepted_args Number of arguments
-     * @return void
-     */
-    protected function add_filter(string $hook, string $method, int $priority = 10, int $accepted_args = 1): void
-    {
-        add_filter($hook, [$this, $method], $priority, $accepted_args);
-    }
-
-    /**
-     * Add a shortcode
-     *
-     * @param string $tag Shortcode tag
-     * @param string $method Method name to call
-     * @return void
-     */
-    protected function add_shortcode(string $tag, string $method): void
-    {
-        add_shortcode($tag, [$this, $method]);
-    }
 
     /**
      * Check if we're in admin area
@@ -115,26 +75,7 @@ abstract class AbstractComponent implements ComponentInterface
         return wp_doing_cron();
     }
 
-    /**
-     * Check if current user has capability
-     *
-     * @param string $capability
-     * @return bool
-     */
-    protected function current_user_can(string $capability): bool
-    {
-        return current_user_can($capability);
-    }
 
-    /**
-     * Get current user ID
-     *
-     * @return int
-     */
-    protected function get_current_user_id(): int
-    {
-        return get_current_user_id();
-    }
 
     /**
      * Verify nonce
@@ -147,6 +88,5 @@ abstract class AbstractComponent implements ComponentInterface
     {
         return wp_verify_nonce($nonce, $action) !== false;
     }
-
 
 }

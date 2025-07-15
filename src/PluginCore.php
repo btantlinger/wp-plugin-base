@@ -210,7 +210,7 @@ class PluginCore implements PluginCoreInterface
      *
      * @return void
      */
-    public function register_component( ComponentInterface $handler): void
+    public function register_component(ComponentInterface $handler): void
     {
         $component_manager = $this->get_service(ComponentManagerInterface::class);
         $component_manager->register_component($handler);
@@ -228,7 +228,7 @@ class PluginCore implements PluginCoreInterface
         $handler_manager = $this->get_service(ComponentManagerInterface::class);
 
         $database_manager->maybe_upgrade();
-        $handler_manager->initialize_handlers();
+        $handler_manager->initialize_components();
     }
 
     /**

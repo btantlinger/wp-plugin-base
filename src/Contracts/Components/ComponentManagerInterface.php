@@ -11,14 +11,14 @@ interface ComponentManagerInterface {
 	 *
 	 * @return void
 	 */
-	public function register_component( ComponentInterface $component): void;
+	public function register_component(ComponentInterface $component): void;
 
 	/**
 	 * Initialize all registered handlers
 	 *
 	 * @return void
 	 */
-	public function initialize_handlers(): void;
+	public function initialize_components(): void;
 
 	/**
 	 * Get all registered handlers

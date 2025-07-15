@@ -2,12 +2,13 @@
 
 namespace WebMoves\PluginBase\Settings;
 
+use WebMoves\PluginBase\Contracts\PluginCoreInterface;
 use WebMoves\PluginBase\Contracts\Templates\TemplateRendererInterface;
 
 class BasicSettingsBuilder extends AbstractSettingBuilder
 {
-	public function __construct(string $settingsGroup, string $page, string $textDomain = 'wm-plugin-base') {
-		parent::__construct($settingsGroup, $page, $textDomain);
+	public function __construct(PluginCoreInterface $core, string $settingsGroup, string $page) {
+		parent::__construct($core, $settingsGroup, $page);
 	}
 
 	public function render_settings_field( array $args ): void {
