@@ -29,32 +29,7 @@ define('WM_PLUGIN_BASE_URL', plugin_dir_url(__FILE__));
 // Load Composer autoloader
 require_once WM_PLUGIN_BASE_PATH . 'vendor/autoload.php';
 
-// Initialize the plugin
-function wm_plugin_base_init() {
-    static $plugin_core = null;
-    
-    if ($plugin_core === null) {
-        $plugin_core = new \WebMoves\PluginBase\PluginCore(WM_PLUGIN_BASE_FILE,  "test-plug", WM_PLUGIN_BASE_VERSION);
-        $plugin_core->initialize();
-        
-        // Make plugin core available globally
-        $GLOBALS['wm_plugin_base'] = $plugin_core;
-    }
-    
-    return $plugin_core;
-}
 
-// Initialize plugin
-wm_plugin_base_init();
-
-// Helper function to get plugin core instance
-function wm_plugin_base(): \WebMoves\PluginBase\PluginCore {
-    return $GLOBALS['wm_plugin_base'];
-}
+\WebMoves\PluginBase\Examples\TestPlugin::init_plugin(__FILE__, WM_PLUGIN_BASE_VERSION);
 
 
-// Add after the existing initialization
-add_action('plugins_loaded', function() {
-	// Initialize test plugin
-	$test_plugin = new \WebMoves\PluginBase\Examples\TestPlugin(wm_plugin_base());
-});

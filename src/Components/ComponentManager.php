@@ -1,10 +1,9 @@
 <?php
 
-namespace WebMoves\PluginBase\Hooks;
+namespace WebMoves\PluginBase\Components;
 
-use WebMoves\PluginBase\Contracts\Hooks\ComponentInterface;
-use WebMoves\PluginBase\Contracts\Hooks\ComponentManagerInterface;
-
+use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
+use WebMoves\PluginBase\Contracts\Components\ComponentManagerInterface;
 
 class ComponentManager implements ComponentManagerInterface
 {
@@ -20,11 +19,11 @@ class ComponentManager implements ComponentManagerInterface
     /**
      * Register a component
      *
-     * @param \WebMoves\PluginBase\Contracts\Hooks\ComponentInterface $component
+     * @param \WebMoves\PluginBase\Contracts\Components\ComponentInterface $component
      *
      * @return void
      */
-    public function register_component( ComponentInterface $component): void
+    public function register_component(ComponentInterface $component): void
     {
         $this->components[] = $component;
 
@@ -46,7 +45,7 @@ class ComponentManager implements ComponentManagerInterface
         }
 
         // Sort components by priority
-        usort($this->components, function ( ComponentInterface $a, ComponentInterface $b) {
+        usort($this->components, function (ComponentInterface $a, ComponentInterface $b) {
             return $a->get_priority() <=> $b->get_priority();
         });
 
@@ -61,7 +60,7 @@ class ComponentManager implements ComponentManagerInterface
     /**
      * Register a single component
      *
-     * @param \WebMoves\PluginBase\Contracts\Hooks\ComponentInterface $component
+     * @param \WebMoves\PluginBase\Contracts\Components\ComponentInterface $component
      *
      * @return void
      */
@@ -71,21 +70,14 @@ class ComponentManager implements ComponentManagerInterface
             return;
         }
 
-        try {
-            $component->register();
-        } catch (\Exception $e) {
-            error_log(sprintf(
-                'Error registering component %s: %s',
-                get_class($component),
-                $e->getMessage()
-            ));
-        }
+        $component->register();
+
     }
 
     /**
      * Get all registered components
      *
-     * @return \WebMoves\PluginBase\Contracts\Hooks\ComponentInterface[]
+     * @return \WebMoves\PluginBase\Contracts\Components\ComponentInterface[]
      */
     public function get_components(): array
     {
@@ -97,7 +89,7 @@ class ComponentManager implements ComponentManagerInterface
      *
      * @param string $class_name
      *
-     * @return \WebMoves\PluginBase\Contracts\Hooks\ComponentInterface[]
+     * @return \WebMoves\PluginBase\Contracts\Components\ComponentInterface[]
      */
     public function get_components_by_class(string $class_name): array
     {

@@ -19,7 +19,7 @@ A modern WordPress plugin development framework using hooks, dependency injectio
 
 namespace MyPlugin\Hooks;
 
-use WebMoves\PluginBase\Hooks\AbstractComponent;
+use WebMoves\PluginBase\Components\AbstractComponent;
 
 class AdminHookHandler extends AbstractComponent
 {

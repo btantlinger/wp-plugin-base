@@ -4,9 +4,10 @@ namespace WebMoves\PluginBase;
 
 use DI\Container;
 use DI\ContainerBuilder;
+use DI\Definition\Helper\DefinitionHelper;
 use WebMoves\PluginBase\Contracts\DatabaseManagerInterface;
-use WebMoves\PluginBase\Contracts\Hooks\ComponentInterface;
-use WebMoves\PluginBase\Contracts\Hooks\ComponentManagerInterface;
+use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
+use WebMoves\PluginBase\Contracts\Components\ComponentManagerInterface;
 use WebMoves\PluginBase\Contracts\PluginCoreInterface;
 
 class PluginCore implements PluginCoreInterface
@@ -97,7 +98,6 @@ class PluginCore implements PluginCoreInterface
      */
     private function setup_container(): void
     {
-
         $builder = new ContainerBuilder();
         
         // 1. Add plugin-specific definitions FIRST (foundation values)
@@ -113,26 +113,62 @@ class PluginCore implements PluginCoreInterface
             PluginCore::class => $this,
         ]);
 
-        // Load core framework dependencies
-        $core_dependencies_file = rtrim($this->get_plugin_base_dir(), '/') . '/config/core-dependencies.php';
+        // 2. Load core framework dependencies
+        $core_dependencies_file = rtrim(dirname(__FILE__, 2), '/') . '/config/core-dependencies.php';
         if (file_exists($core_dependencies_file)) {
             $core_dependencies = require $core_dependencies_file;
             $builder->addDefinitions($core_dependencies);
         } else {
-			throw new \Exception('Plugin core dependencies file not found');
-        }
-
-        // Load user dependencies last
-        $user_dependencies_file = rtrim($this->get_plugin_base_dir(), '/') . '/config/dependencies.php';
-        if (file_exists($user_dependencies_file)) {
-            $user_dependencies = require $user_dependencies_file;
-            $builder->addDefinitions($user_dependencies);
-        } else {
-			throw new \Exception('Plugin dependencies file not found');
+            throw new \Exception('Plugin core dependencies file not found');
         }
 
         // Build the container with all definitions
         $this->container = $builder->build();
+
+        // 3. Load plugin config-based dependencies AFTER container is built
+        $this->load_plugin_config_dependencies();
+    }
+
+    private function load_plugin_config_dependencies(): void
+    {
+        $config_dir = $this->get_plugin_base_dir() . '/config';
+        
+        if (!is_dir($config_dir)) {
+            return;
+        }
+        
+        // Load specific config files in order
+        $config_files = [
+            'services.php',
+            'components.php',
+            'integrations.php', 
+            'dependencies.php', // Keep backward compatibility
+        ];
+        
+        foreach ($config_files as $file) {
+            $path = $config_dir . '/' . $file;
+            if (file_exists($path)) {
+                $definitions = require $path;
+                if (is_array($definitions)) {
+                    foreach ($definitions as $id => $definition) {
+                        $this->register_service($id, $definition);
+                    }
+                }
+            }
+        }
+        
+        // Load bundle files
+        $bundles_dir = $config_dir . '/bundles';
+        if (is_dir($bundles_dir)) {
+            foreach (glob($bundles_dir . '/*.php') as $bundle_file) {
+                $definitions = require $bundle_file;
+                if (is_array($definitions)) {
+                    foreach ($definitions as $id => $definition) {
+                        $this->register_service($id, $definition);
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -142,10 +178,16 @@ class PluginCore implements PluginCoreInterface
      * @param mixed $value Service instance or factory
      * @return void
      */
-    public function register_service(string $id, $value): void
+    public function register_service(string $id, mixed $value): void
     {
         $this->container->set($id, $value);
+		$object = $this->container->get($id);
+		if($object instanceof ComponentInterface) {
+			$this->register_component($object);
+		}
     }
+
+
 
     /**
      * Get a service from the container
@@ -158,10 +200,13 @@ class PluginCore implements PluginCoreInterface
 		return $this->container->get( $id );
     }
 
+
+
+
     /**
      * Register an event handler
      *
-     * @param \WebMoves\PluginBase\Contracts\Hooks\ComponentInterface $handler
+     * @param \WebMoves\PluginBase\Contracts\Components\ComponentInterface $handler
      *
      * @return void
      */
@@ -171,19 +216,6 @@ class PluginCore implements PluginCoreInterface
         $component_manager->register_component($handler);
     }
 
-    /**
-     * Register multiple event handlers
-     *
-     * @param ComponentInterface[] $handlers
-     *
-     * @return void
-     */
-    public function register_handlers(array $handlers): void
-    {
-        foreach ($handlers as $handler) {
-            $this->register_component($handler);
-        }
-    }
 
     /**
      * Handle plugins_loaded action

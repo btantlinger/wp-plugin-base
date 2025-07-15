@@ -1,8 +1,7 @@
 <?php
 
-namespace WebMoves\PluginBase\Contracts\Hooks;
+namespace WebMoves\PluginBase\Contracts\Components;
 
-use WebMoves\PluginBase\Contracts\Hooks\ComponentInterface;
 
 interface ComponentManagerInterface {
 	/**

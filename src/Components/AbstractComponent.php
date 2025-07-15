@@ -1,9 +1,8 @@
 <?php
 
-namespace WebMoves\PluginBase\Hooks;
+namespace WebMoves\PluginBase\Components;
 
-use WebMoves\PluginBase\Contracts\Hooks\ComponentInterface;
-use WebMoves\PluginBase\HookManager;
+use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
 
 abstract class AbstractComponent implements ComponentInterface
 {
@@ -149,17 +148,5 @@ abstract class AbstractComponent implements ComponentInterface
         return wp_verify_nonce($nonce, $action) !== false;
     }
 
-    /**
-     * Log a message (requires a logger service to be registered)
-     *
-     * @param string $message
-     * @param string $level
-     * @return void
-     */
-    protected function log(string $message, string $level = 'info'): void
-    {
-        if (function_exists('error_log')) {
-            error_log(sprintf('[%s] %s: %s', strtoupper($level), get_class($this), $message));
-        }
-    }
+
 }

@@ -2,7 +2,7 @@
 
 namespace WebMoves\PluginBase\Examples\Hooks;
 
-use WebMoves\PluginBase\Contracts\Hooks\ComponentInterface;
+use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
 use WebMoves\PluginBase\Settings\BasicSettingsBuilder;
 
 class AdminMenuHandler implements ComponentInterface

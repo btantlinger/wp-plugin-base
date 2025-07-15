@@ -1,10 +1,10 @@
 <?php
 
 use WebMoves\PluginBase\Contracts\DatabaseManagerInterface;
-use WebMoves\PluginBase\Contracts\Hooks\ComponentManagerInterface;
+use WebMoves\PluginBase\Contracts\Components\ComponentManagerInterface;
 use WebMoves\PluginBase\Contracts\Settings\SettingsManagerFactoryInterface;
 use WebMoves\PluginBase\DatabaseManager;
-use WebMoves\PluginBase\Hooks\ComponentManager;
+use WebMoves\PluginBase\Components\ComponentManager;
 use WebMoves\PluginBase\Contracts\Templates\TemplateRendererInterface;
 use WebMoves\PluginBase\Templates\TemplateRenderer;
 use WebMoves\PluginBase\Settings\SettingsManagerFactory;
@@ -73,8 +73,6 @@ return [
 		    'plugin_version' => $container->get('plugin.version'),
 		    'plugin_name' => $container->get('plugin.name'),
 	    ]);
-
 	    return $renderer;
     },
-
 ];

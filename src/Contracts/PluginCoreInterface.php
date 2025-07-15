@@ -3,7 +3,7 @@
 namespace WebMoves\PluginBase\Contracts;
 
 use DI\Container;
-use WebMoves\PluginBase\Contracts\Hooks\ComponentInterface;
+use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
 
 interface PluginCoreInterface
 {
@@ -34,20 +34,12 @@ interface PluginCoreInterface
 	/**
 	 * Register an event handler
 	 *
-	 * @param ComponentInterface $handler
+	 * @param \WebMoves\PluginBase\Contracts\Components\ComponentInterface $handler
 	 *
 	 * @return void
 	 */
-	public function register_component( ComponentInterface $handler): void;
+	public function register_component(ComponentInterface $handler): void;
 
-	/**
-	 * Register multiple event handlers
-	 *
-	 * @param ComponentInterface[] $handlers
-	 *
-	 * @return void
-	 */
-	public function register_handlers(array $handlers): void;
 
 	/**
 	 * Get the container instance

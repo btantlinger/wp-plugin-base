@@ -2,22 +2,23 @@
 
 namespace WebMoves\PluginBase\Examples;
 
-use WebMoves\PluginBase\Contracts\PluginCoreInterface;
+use WebMoves\PluginBase\AbstractPlugin;
+use WebMoves\PluginBase\Logging\LoggerFactory;
 use WebMoves\PluginBase\Settings\BasicSettingsBuilder;
 use WebMoves\PluginBase\Examples\Settings\DemoSettingsProvider;
 use WebMoves\PluginBase\Examples\Settings\ApiSettingsProvider;
 use WebMoves\PluginBase\Examples\Hooks\AdminMenuHandler;
 
-class TestPlugin
+class TestPlugin extends AbstractPlugin
 {
-    private PluginCoreInterface $core;
+
     private BasicSettingsBuilder $settings_builder;
 
-    public function __construct(PluginCoreInterface $core)
+    public function initialize(): void
     {
-        $this->core = $core;
         $this->init_settings();
         $this->init_hooks();
+		$logger = LoggerFactory::createLogger($this->core->get_name(), $this->core->get_plugin_file(), 'app');
     }
 
     private function init_settings(): void
@@ -40,7 +41,7 @@ class TestPlugin
     private function init_hooks(): void
     {
         // Register admin menu handler
-        $this->core->register_component(new AdminMenuHandler($this->settings_builder));
+        $this->get_core()->register_component(new AdminMenuHandler($this->settings_builder));
     }
 
     public function get_settings_builder(): BasicSettingsBuilder
