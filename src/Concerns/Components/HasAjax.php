@@ -2,11 +2,11 @@
 
 namespace WebMoves\PluginBase\Concerns\Components;
 
-trait CanHaveAjax
+trait HasAjax
 {
 	use TraitRegistrationHelper;
 
-	protected function register_can_have_ajax(): void
+	protected function register_has_ajax(): void
 	{
 		$this->ensure_component_registration();
 

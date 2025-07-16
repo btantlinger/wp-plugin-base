@@ -3,6 +3,7 @@
 namespace WebMoves\PluginBase\Contracts;
 
 use DI\Container;
+use Psr\Log\LoggerInterface;
 use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
 
 interface PluginCoreInterface
@@ -21,7 +22,7 @@ interface PluginCoreInterface
 	 * @param mixed $value Service instance or factory
 	 * @return void
 	 */
-	public function register_service(string $id, $value): void;
+	public function set(string $id, $value, bool $auto_register_components=true): void;
 
 	/**
 	 * Get a service from the container
@@ -29,16 +30,20 @@ interface PluginCoreInterface
 	 * @param string $id Service identifier
 	 * @return mixed
 	 */
-	public function get_service(string $id);
+	public function get(string $id);
+
+	public function get_logger(?string $channel=null): LoggerInterface;
+
 
 	/**
-	 * Register an event handler
+	 * Register a component with a unique identifier and its corresponding handler.
 	 *
-	 * @param \WebMoves\PluginBase\Contracts\Components\ComponentInterface $handler
+	 * @param string $id The unique identifier for the component.
+	 * @param ComponentInterface $handler The handler associated with the component.
 	 *
 	 * @return void
 	 */
-	public function register_component(ComponentInterface $handler): void;
+	public function register_component(string $id, ComponentInterface $handler): void;
 
 
 	/**

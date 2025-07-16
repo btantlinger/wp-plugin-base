@@ -6,33 +6,19 @@ class DatabaseManager implements \WebMoves\PluginBase\Contracts\DatabaseManagerI
 {
     private string $version;
     private string $version_option_name;
+    private string $plugin_name;
     private array $tables = [];
+    private array $version_callbacks = [];
 
     public function __construct(string $version, string $plugin_name = 'plugin-base')
     {
         $this->version = $version;
+        $this->plugin_name = $plugin_name;
         $this->version_option_name = $this->generate_version_option_name($plugin_name);
     }
 
     /**
-     * Generate a unique version option name based on plugin name
-     *
-     * @param string $plugin_name
-     * @return string
-     */
-    private function generate_version_option_name(string $plugin_name): string
-    {
-        // Convert plugin name to a safe option name format
-        $safe_name = sanitize_key($plugin_name);
-        return $safe_name . '_db_version';
-    }
-
-    /**
      * Register a table schema
-     *
-     * @param string $table_name Table name (without prefix)
-     * @param string $schema SQL schema
-     * @return void
      */
     public function register_table(string $table_name, string $schema): void
     {
@@ -40,29 +26,46 @@ class DatabaseManager implements \WebMoves\PluginBase\Contracts\DatabaseManagerI
     }
 
     /**
-     * Create all registered tables
-     *
-     * @return void
+     * Register a callback for a specific version upgrade
+     */
+    public function register_version_callback(string $version, callable $callback): void
+    {
+        $this->version_callbacks[$version] = $callback;
+    }
+
+    /**
+     * Create/update all registered tables using dbDelta
      */
     public function create_tables(): void
     {
-        global $wpdb;
+        if (empty($this->tables)) {
+            return;
+        }
 
+        global $wpdb;
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+
+        $sql_queries = [];
 
         foreach ($this->tables as $table_name => $schema) {
             $table_name = $wpdb->prefix . $table_name;
             $sql = str_replace('{table_name}', $table_name, $schema);
-            dbDelta($sql);
+            $sql_queries[] = $sql;
         }
 
-        $this->update_version();
+        // Run dbDelta with all table schemas
+        $results = dbDelta($sql_queries);
+
+        // Log the results for debugging
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            foreach ($results as $result) {
+                error_log("Database update: " . $result);
+            }
+        }
     }
 
     /**
-     * Check if database needs upgrade
-     *
-     * @return void
+     * Check if database needs upgrade and run it
      */
     public function maybe_upgrade(): void
     {
@@ -74,58 +77,65 @@ class DatabaseManager implements \WebMoves\PluginBase\Contracts\DatabaseManagerI
     }
 
     /**
-     * Upgrade database
-     *
-     * @param string|false $old_version
-     * @return void
+     * Upgrade database from old version to current version
      */
     private function upgrade_database($old_version): void
     {
-        // Create tables if they don't exist
-        $this->create_tables();
+        try {
+            // Always run dbDelta to ensure tables are up to date
+            $this->create_tables();
 
-        // Run version-specific upgrades
-        if ($old_version) {
-            $this->run_version_upgrades($old_version);
+            // Run version-specific callbacks
+            if ($old_version) {
+                $this->run_version_upgrades($old_version);
+            }
+
+            // Update version after successful upgrade
+            $this->update_version();
+
+            // Fire action for external integrations
+            do_action($this->plugin_name . '_database_upgraded', $old_version, $this->version);
+
+            // Log successful upgrade
+            error_log("Database upgraded for {$this->plugin_name} from {$old_version} to {$this->version}");
+
+        } catch (\Exception $e) {
+            error_log("Database upgrade failed for {$this->plugin_name}: " . $e->getMessage());
+            throw $e;
         }
-
-        do_action('plugin_base_database_upgraded', $old_version, $this->version);
     }
 
     /**
-     * Run version-specific database upgrades
-     *
-     * @param string $old_version
-     * @return void
+     * Run version-specific upgrade callbacks
      */
     private function run_version_upgrades(string $old_version): void
     {
-        // Example: version comparison and upgrades
-        if (version_compare($old_version, '1.1.0', '<')) {
-            // Run upgrades for version 1.1.0
-            do_action('plugin_base_upgrade_to_1_1_0');
+        if (empty($this->version_callbacks)) {
+            return;
         }
 
-        if (version_compare($old_version, '1.2.0', '<')) {
-            // Run upgrades for version 1.2.0
-            do_action('plugin_base_upgrade_to_1_2_0');
-        }
-    }
+        // Sort versions to ensure proper order
+        uksort($this->version_callbacks, 'version_compare');
 
-    /**
-     * Update the database version
-     *
-     * @return void
-     */
-    private function update_version(): void
-    {
-        update_option($this->version_option_name, $this->version);
+        foreach ($this->version_callbacks as $callback_version => $callback) {
+            // Only run callbacks for versions newer than old version
+            // but not newer than current version
+            if (version_compare($old_version, $callback_version, '<') && 
+                version_compare($callback_version, $this->version, '<=')) {
+                
+                try {
+                    $callback($old_version, $this->version);
+                    error_log("Version callback {$callback_version} executed for {$this->plugin_name}");
+                } catch (Exception $e) {
+                    error_log("Version callback {$callback_version} failed for {$this->plugin_name}: " . $e->getMessage());
+                    throw $e;
+                }
+            }
+        }
     }
 
     /**
      * Get current database version
-     *
-     * @return string|false
      */
     public function get_version(): string|false
     {
@@ -134,8 +144,6 @@ class DatabaseManager implements \WebMoves\PluginBase\Contracts\DatabaseManagerI
 
     /**
      * Drop all registered tables
-     *
-     * @return void
      */
     public function drop_tables(): void
     {
@@ -151,9 +159,6 @@ class DatabaseManager implements \WebMoves\PluginBase\Contracts\DatabaseManagerI
 
     /**
      * Get table name with prefix
-     *
-     * @param string $table_name Table name without prefix
-     * @return string
      */
     public function get_table_name(string $table_name): string
     {
@@ -162,12 +167,19 @@ class DatabaseManager implements \WebMoves\PluginBase\Contracts\DatabaseManagerI
     }
 
     /**
-     * Get the version option name being used
-     *
-     * @return string
+     * Generate a unique version option name based on plugin name
      */
-    public function get_version_option_name(): string
+    private function generate_version_option_name(string $plugin_name): string
     {
-        return $this->version_option_name;
+        $safe_name = sanitize_key($plugin_name);
+        return $safe_name . '_db_version';
+    }
+
+    /**
+     * Update the database version
+     */
+    private function update_version(): void
+    {
+        update_option($this->version_option_name, $this->version);
     }
 }

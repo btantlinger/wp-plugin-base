@@ -2,11 +2,11 @@
 
 namespace WebMoves\PluginBase\Concerns\Components;
 
-trait CanHaveMetaBox
+trait HasMetaBox
 {
 	use TraitRegistrationHelper;
 
-	protected function register_can_have_meta_box(): void
+	protected function register_has_meta_box(): void
 	{
 		$this->ensure_component_registration();
 

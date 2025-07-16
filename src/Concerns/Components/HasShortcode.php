@@ -2,11 +2,11 @@
 
 namespace WebMoves\PluginBase\Concerns\Components;
 
-trait CanHaveShortcode {
+trait HasShortcode {
 
 	use TraitRegistrationHelper;
 
-	protected function register_can_have_shortcode(): void {
+	protected function register_has_shortcode(): void {
 
 		$this->ensure_component_registration();
 

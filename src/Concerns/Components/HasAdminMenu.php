@@ -2,10 +2,10 @@
 
 namespace WebMoves\PluginBase\Concerns\Components;
 
-trait CanHaveAdminMenu
+trait HasAdminMenu
 {
 	use TraitRegistrationHelper;
-	protected function register_can_have_admin_menu(): void
+	protected function register_has_admin_menu(): void
 	{
 		$this->ensure_component_registration();
 

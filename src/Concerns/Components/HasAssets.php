@@ -1,11 +1,11 @@
 <?php
 namespace WebMoves\PluginBase\Concerns\Components;
 
-trait CanHaveAssets
+trait HasAssets
 {
 	use TraitRegistrationHelper;
 
-	protected function register_can_have_assets(): void
+	protected function register_has_assets(): void
 	{
 		$this->ensure_component_registration();
 

@@ -4,11 +4,12 @@ namespace WebMoves\PluginBase;
 
 use DI\Container;
 use DI\ContainerBuilder;
-use DI\Definition\Helper\DefinitionHelper;
+use Psr\Log\LoggerInterface;
 use WebMoves\PluginBase\Contracts\DatabaseManagerInterface;
 use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
 use WebMoves\PluginBase\Contracts\Components\ComponentManagerInterface;
 use WebMoves\PluginBase\Contracts\PluginCoreInterface;
+use WebMoves\PluginBase\Logging\LoggerFactory;
 
 class PluginCore implements PluginCoreInterface
 {
@@ -151,7 +152,7 @@ class PluginCore implements PluginCoreInterface
                 $definitions = require $path;
                 if (is_array($definitions)) {
                     foreach ($definitions as $id => $definition) {
-                        $this->register_service($id, $definition);
+                        $this->set($id, $definition);
                     }
                 }
             }
@@ -164,7 +165,7 @@ class PluginCore implements PluginCoreInterface
                 $definitions = require $bundle_file;
                 if (is_array($definitions)) {
                     foreach ($definitions as $id => $definition) {
-                        $this->register_service($id, $definition);
+                        $this->set($id, $definition);
                     }
                 }
             }
@@ -178,12 +179,12 @@ class PluginCore implements PluginCoreInterface
      * @param mixed $value Service instance or factory
      * @return void
      */
-    public function register_service(string $id, mixed $value): void
+    public function set(string $id, mixed $value, bool $auto_register_components=true): void
     {
         $this->container->set($id, $value);
 		$object = $this->container->get($id);
-		if($object instanceof ComponentInterface) {
-			$this->register_component($object);
+		if($auto_register_components && $object instanceof ComponentInterface) {
+			$this->register_component($id, $object);
 		}
     }
 
@@ -195,7 +196,7 @@ class PluginCore implements PluginCoreInterface
      * @param string $id Service identifier
      * @return mixed
      */
-    public function get_service(string $id)
+    public function get(string $id)
     {
 		return $this->container->get( $id );
     }
@@ -210,10 +211,13 @@ class PluginCore implements PluginCoreInterface
      *
      * @return void
      */
-    public function register_component(ComponentInterface $handler): void
+    public function register_component(string $id, ComponentInterface $handler): void
     {
-        $component_manager = $this->get_service(ComponentManagerInterface::class);
-        $component_manager->register_component($handler);
+	    /**
+	     * @var $component_manager ComponentManagerInterface
+	     */
+        $component_manager = $this->get(ComponentManagerInterface::class);
+        $component_manager->register_component($id, $handler);
     }
 
 
@@ -224,8 +228,9 @@ class PluginCore implements PluginCoreInterface
      */
     public function on_plugins_loaded(): void
     {
-        $database_manager = $this->get_service(DatabaseManagerInterface::class);
-        $handler_manager = $this->get_service(ComponentManagerInterface::class);
+		$this->get_logger()->info( $this->get_name() . ' on_plugins_loaded', ['version' => $this->get_version()] );
+        $database_manager = $this->get(DatabaseManagerInterface::class);
+        $handler_manager = $this->get(ComponentManagerInterface::class);
 
         $database_manager->maybe_upgrade();
         $handler_manager->initialize_components();
@@ -239,7 +244,9 @@ class PluginCore implements PluginCoreInterface
     public function on_init(): void
     {
         // Plugin initialization logic
-        do_action('plugin_base_init', $this);
+	    $this->get_logger()->info( $this->get_name() . ' on_init', ['version' => $this->get_version()] );
+	    $hook = $this->get_hook_prefix() . '_init';
+        do_action($hook, $this);
     }
 
     /**
@@ -250,7 +257,9 @@ class PluginCore implements PluginCoreInterface
     public function on_admin_init(): void
     {
         // Admin initialization logic
-        do_action('plugin_base_admin_init', $this);
+	    $this->get_logger()->info( $this->get_name() . ' on_admin_init', ['version' => $this->get_version()] );
+	    $hook = $this->get_hook_prefix() . '_admin_init';
+        do_action($hook, $this);
     }
 
     /**
@@ -260,9 +269,11 @@ class PluginCore implements PluginCoreInterface
      */
     public function on_activation(): void
     {
-        $database_manager = $this->get_service(DatabaseManagerInterface::class);
+		$this->get_logger()->info( $this->get_name() . ' on_activation', ['version' => $this->get_version()] );
+        $database_manager = $this->get(DatabaseManagerInterface::class);
         $database_manager->create_tables();
-        do_action('plugin_base_activation', $this);
+		$hook = $this->get_hook_prefix() . '_activation';
+        do_action($hook, $this);
     }
 
     /**
@@ -272,8 +283,33 @@ class PluginCore implements PluginCoreInterface
      */
     public function on_deactivation(): void
     {
-        do_action('plugin_base_deactivation', $this);
+		$this->get_logger()->info( $this->get_name() . ' on_deactivation', ['version' => $this->get_version()] );
+		$hook = $this->get_hook_prefix() . '_deactivation';
+        do_action($hook, $this);
     }
+
+	public function get_hook_prefix(): string {
+		return sanitize_title_with_dashes($this->get_name());
+	}
+
+	public function get_logger(?string $channel=null): LoggerInterface
+	{
+		$logger = null;
+		try {
+			if(empty($channel)) {
+				$channel = 'default';
+			}
+     		$logger = $this->get_container()->get( "logger.$channel" );
+		} catch (\Exception $e) {
+		}
+
+		if(!$logger) {
+			$logger = LoggerFactory::createLogger($this->get_name(), $this->get_plugin_file(), $channel);
+		}
+		return $logger;
+	}
+
+
 
     /**
      * Get the container instance

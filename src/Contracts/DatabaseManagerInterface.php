@@ -12,6 +12,16 @@ interface DatabaseManagerInterface {
 	 * @return void
 	 */
 	public function register_table(string $table_name, string $schema): void;
+
+
+	/**
+	 * @param string $version
+	 * @param callable $callback
+	 *
+	 * @return void
+	 */
+	public function register_version_callback(string $version, callable $callback): void;
+
 	/**
 	 * Create all registered tables
 	 *

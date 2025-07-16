@@ -2,15 +2,15 @@
 
 namespace WebMoves\PluginBase\Factories;
 
-use WebMoves\PluginBase\Concerns\Components\CanBeScheduled;
-use WebMoves\PluginBase\Concerns\Components\CanHaveShortcode;
-use WebMoves\PluginBase\Concerns\Components\ComponentRegistration;
-use WebMoves\PluginBase\Concerns\Components\CanBeCommand;
-use WebMoves\PluginBase\Concerns\Components\CanHaveAssets;
-use WebMoves\PluginBase\Concerns\Components\CanHaveSettings;
-use WebMoves\PluginBase\Concerns\Components\CanHaveAction;
-use WebMoves\PluginBase\Concerns\Components\CanHaveFilter;
 use WebMoves\PluginBase\Components\AbstractComponent;
+use WebMoves\PluginBase\Concerns\Components\ComponentRegistration;
+use WebMoves\PluginBase\Concerns\Components\HasAction;
+use WebMoves\PluginBase\Concerns\Components\HasAssets;
+use WebMoves\PluginBase\Concerns\Components\HasCli;
+use WebMoves\PluginBase\Concerns\Components\HasFilter;
+use WebMoves\PluginBase\Concerns\Components\HasSchedule;
+use WebMoves\PluginBase\Concerns\Components\HasSettings;
+use WebMoves\PluginBase\Concerns\Components\HasShortcode;
 
 class ComponentFactory
 {
@@ -21,7 +21,7 @@ class ComponentFactory
 	{
 		return new class($name, $handler, $description, $synopsis) extends AbstractComponent {
 			use ComponentRegistration;
-			use CanBeCommand;
+			use HasCli;
 
 			public function __construct(
 				private string $name,
@@ -46,7 +46,7 @@ class ComponentFactory
 	{
 		return new class($hook, $handler, $schedule, $start_time) extends AbstractComponent {
 			use ComponentRegistration;
-			use CanBeScheduled;
+			use HasSchedule;
 
 			public function __construct(
 				private string $hook,
@@ -69,7 +69,7 @@ class ComponentFactory
 	{
 		return new class($front_assets, $admin_assets) extends AbstractComponent {
 			use ComponentRegistration;
-			use CanHaveAssets;
+			use HasAssets;
 
 			public function __construct(
 				private array $front_assets,
@@ -88,7 +88,7 @@ class ComponentFactory
 	{
 		return new class($hook, $callback, $priority, $accepted_args) extends AbstractComponent {
 			use ComponentRegistration;
-			use CanHaveAction;
+			use HasAction;
 
 			public function __construct(
 				private string $hook,
@@ -122,7 +122,7 @@ class ComponentFactory
 	{
 		return new class($hook, $callback, $priority, $accepted_args) extends AbstractComponent {
 			use ComponentRegistration;
-			use CanHaveFilter;
+			use HasFilter;
 
 			public function __construct(
 				private string $hook,
@@ -149,7 +149,7 @@ class ComponentFactory
 	{
 		return new class($tag, $handler) extends AbstractComponent {
 			use ComponentRegistration;
-			use CanHaveShortcode;
+			use HasShortcode;
 
 			public function __construct(
 				private string $tag,
@@ -157,7 +157,7 @@ class ComponentFactory
 			) {}
 
 			protected function render_shortcode( $atts, $content = null ): string {
-				call_user_func($this->handler, $atts, $content);
+				return call_user_func($this->handler, $atts, $content);
 			}
 
 			protected function get_shortcode_tag(): string {
@@ -173,7 +173,7 @@ class ComponentFactory
 	{
 		return new class($group, $fields, $page) extends AbstractComponent {
 			use ComponentRegistration;
-			use CanHaveSettings;
+			use HasSettings;
 
 			public function __construct(
 				private string $group,

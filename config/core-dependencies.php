@@ -17,8 +17,22 @@ use function DI\factory;
 
 return [
 
-	DatabaseManagerInterface::class => create(DatabaseManager::class)
-        ->constructor(get('plugin.version'), get('plugin.name')),
+	DatabaseManagerInterface::class => factory(function ($container) {
+		$plugin_version = $container->get('plugin.version');
+		$plugin_name = $container->get('plugin.name');
+		
+		// Check if plugin has defined a specific database version
+		$db_version = $plugin_version; // Default to plugin version
+		
+		try {
+			// Try to get custom database version from container
+			$db_version = $container->get('plugin.database_version');
+		} catch (\Exception $e) {
+			// No custom database version defined, use plugin version
+		}
+		
+		return new DatabaseManager($db_version, $plugin_name);
+	}),
 
 	ComponentManagerInterface::class => autowire(ComponentManager::class),
 
@@ -27,10 +41,14 @@ return [
 
 	// Logger Factory
 	LoggerFactory::class => create(LoggerFactory::class)
-		->constructor(get('plugin.name')),
+		->constructor(get('plugin.name'), get('plugin.file')),
 
 	// Default logger (for backward compatibility)
 	LoggerInterface::class => factory(function ($container) {
+		return $container->get(LoggerFactory::class)->create();
+	}),
+
+	'logger.default' => factory(function ($container) {
 		return $container->get(LoggerFactory::class)->create();
 	}),
 
@@ -58,7 +76,6 @@ return [
 			'api'
 		);
 	}),
-
 
 	// Templates renderer with proper plugin-specific configuration
 	TemplateRendererInterface::class => function ($container) {

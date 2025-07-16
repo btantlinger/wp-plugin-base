@@ -2,11 +2,11 @@
 
 namespace WebMoves\PluginBase\Concerns\Components;
 
-trait CanBeScheduled {
+trait HasSchedule {
 
 	use TraitRegistrationHelper;
 
-	protected function register_can_be_scheduled(): void {
+	protected function register_has_schedule(): void {
 
 		$this->ensure_component_registration();
 

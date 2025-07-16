@@ -11,7 +11,7 @@ interface ComponentManagerInterface {
 	 *
 	 * @return void
 	 */
-	public function register_component(ComponentInterface $component): void;
+	public function register_component(string $id, ComponentInterface $component): void;
 
 	/**
 	 * Initialize all registered handlers
@@ -21,36 +21,36 @@ interface ComponentManagerInterface {
 	public function initialize_components(): void;
 
 	/**
-	 * Get all registered handlers
+	 * Get all registered components
 	 *
-	 * @return ComponentInterface[]
+	 * @return array<string,ComponentInterface> Associative array of components with component ID as key
 	 */
 	public function get_components(): array;
 
 
 	/**
-	 * Get handlers by class name
+	 * Get a component
 	 *
-	 * @param string $class_name
+	 * @param string $id
 	 *
-	 * @return ComponentInterface[]
+	 * @return ComponentInterface|null
 	 */
-	public function get_components_by_class(string $class_name): array;
+	public function get_component(string $id): ?ComponentInterface;
 
 	/**
-	 * Check if handler is registered
+	 * Check if a component is registered
+	 *
+	 * @param string $id
+	 * @return bool
+	 */
+	public function has_component(string $id): bool;
+
+	/**
+	 * Remove a component by class name
 	 *
 	 * @param string $class_name
 	 * @return bool
 	 */
-	public function has_component(string $class_name): bool;
-
-	/**
-	 * Remove a handler by class name
-	 *
-	 * @param string $class_name
-	 * @return bool
-	 */
-	public function remove_component(string $class_name): bool;
+	public function remove_component(string $id): void;
 
 }

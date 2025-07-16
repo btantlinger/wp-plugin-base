@@ -16,16 +16,13 @@ class ComponentManager implements ComponentManagerInterface
 
     }
 
-    /**
-     * Register a component
-     *
-     * @param \WebMoves\PluginBase\Contracts\Components\ComponentInterface $component
-     *
-     * @return void
-     */
-    public function register_component(ComponentInterface $component): void
+    public function register_component(string $id, ComponentInterface $component): void
     {
-        $this->components[] = $component;
+        if( $this->has_component($id) ) {
+            throw new \RuntimeException("Component with id $id already registered");
+        }
+
+		$this->components[$id] = $component;
 
         // If we're already initialized, register the component immediately
         if ($this->initialized) {
@@ -64,7 +61,7 @@ class ComponentManager implements ComponentManagerInterface
      *
      * @return void
      */
-    private function register_single_component( ComponentInterface $component): void
+    private function register_single_component(ComponentInterface $component): void
     {
         if (!$component->can_register()) {
             return;
@@ -74,64 +71,28 @@ class ComponentManager implements ComponentManagerInterface
 
     }
 
-    /**
-     * Get all registered components
-     *
-     * @return \WebMoves\PluginBase\Contracts\Components\ComponentInterface[]
-     */
+
     public function get_components(): array
     {
         return $this->components;
     }
 
-    /**
-     * Get components by class name
-     *
-     * @param string $class_name
-     *
-     * @return \WebMoves\PluginBase\Contracts\Components\ComponentInterface[]
-     */
-    public function get_components_by_class(string $class_name): array
+
+    public function has_component(string $id): bool
     {
-        return array_filter($this->components, function (ComponentInterface $handler) use ($class_name) {
-            return is_a($handler, $class_name);
-        });
+		return isset($this->components[$id]);
     }
 
-    /**
-     * Check if component is registered
-     *
-     * @param string $class_name
-     * @return bool
-     */
-    public function has_component(string $class_name): bool
+	public function get_component(string $id): ?ComponentInterface
     {
-        foreach ($this->components as $handler) {
-            if (is_a($handler, $class_name)) {
-                return true;
-            }
-        }
-
-        return false;
+		if(!$this->has_component($id)) {
+			return null;
+		}
+		return $this->components[$id];
     }
 
-    /**
-     * Remove a component by class name
-     *
-     * @param string $class_name
-     * @return bool
-     */
-    public function remove_component(string $class_name): bool
+    public function remove_component(string $id): void
     {
-        $removed = false;
-        $this->components = array_filter($this->components, function (ComponentInterface $handler) use ($class_name, &$removed) {
-            if (is_a($handler, $class_name)) {
-                $removed = true;
-                return false;
-            }
-            return true;
-        });
-
-        return $removed;
+		unset($this->components[$id]);
     }
 }

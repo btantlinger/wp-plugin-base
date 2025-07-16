@@ -2,11 +2,11 @@
 
 namespace WebMoves\PluginBase\Concerns\Components;
 
-trait CanHaveFilter
+trait HasFilter
 {
     use TraitRegistrationHelper;
 
-    protected function register_can_have_filter(): void
+    protected function register_has_filter(): void
     {
         $this->ensure_component_registration();
 

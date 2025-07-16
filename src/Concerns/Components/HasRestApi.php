@@ -2,10 +2,10 @@
 
 namespace WebMoves\PluginBase\Concerns\Components;
 
-trait CanHaveRestApi
+trait HasRestApi
 {
 	use TraitRegistrationHelper;
-	protected function register_can_have_rest_api(): void
+	protected function register_has_rest_api(): void
 	{
 		$this->ensure_component_registration();
 		add_action('rest_api_init', [$this, 'register_rest_routes']);

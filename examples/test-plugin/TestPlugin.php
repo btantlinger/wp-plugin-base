@@ -43,9 +43,8 @@ class TestPlugin extends AbstractPlugin
 
     private function init_hooks(): void
     {
-
-	    $this->get_core()->register_component(new AdminMenuHandler($this->settings_builder));
-	    $this->core->register_component($this->settings_builder);
+	    $this->core->set(AdminMenuHandler::class, new AdminMenuHandler($this->settings_builder));
+	    $this->core->set("settings-builder", $this->settings_builder);
     }
 
     public function get_settings_builder(): BasicSettingsBuilder

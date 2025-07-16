@@ -2,10 +2,10 @@
 
 namespace WebMoves\PluginBase\Concerns\Components;
 
-trait CanHaveSettings
+trait HasSettings
 {
 	use TraitRegistrationHelper;
-	protected function register_can_have_settings(): void
+	protected function register_has_settings(): void
 	{
 		$this->ensure_component_registration();
 		add_action('admin_init', [$this, 'register_settings']);

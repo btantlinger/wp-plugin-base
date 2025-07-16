@@ -29,7 +29,7 @@ trait ComponentRegistration {
 	}
 
 	private function get_trait_register_method(string $trait_name): string {
-		// Convert "CanBeCommand" to "register_can_be_command"
+		// Convert "HasCli" to "register_can_be_command"
 		$snake_case = strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', basename($trait_name)));
 		return "register_{$snake_case}";
 	}

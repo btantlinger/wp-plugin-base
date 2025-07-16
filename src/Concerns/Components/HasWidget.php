@@ -2,11 +2,11 @@
 
 namespace WebMoves\PluginBase\Concerns\Components;
 
-trait CanHaveWidget
+trait HasWidget
 {
 	use TraitRegistrationHelper;
 
-	protected function register_can_have_widget(): void
+	protected function register_has_widget(): void
 	{
 		$this->ensure_component_registration();
 		add_action('widgets_init', [$this, 'register_widget']);

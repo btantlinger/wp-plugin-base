@@ -2,11 +2,11 @@
 
 namespace WebMoves\PluginBase\Concerns\Components;
 
-trait CanHaveAction
+trait HasAction
 {
 	use TraitRegistrationHelper;
 
-	protected function register_can_have_action(): void
+	protected function register_has_action(): void
 	{
 		$this->ensure_component_registration();
 

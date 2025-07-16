@@ -2,11 +2,11 @@
 
 namespace WebMoves\PluginBase\Concerns\Components;
 
-trait CanBeCommand {
+trait HasCli {
 
 	use TraitRegistrationHelper;
 
-	protected function register_can_be_command(): void {
+	protected function register_has_cli(): void {
 
 		$this->ensure_component_registration();
 

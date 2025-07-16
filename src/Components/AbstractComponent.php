@@ -75,8 +75,6 @@ abstract class AbstractComponent implements ComponentInterface
         return wp_doing_cron();
     }
 
-
-
     /**
      * Verify nonce
      *
