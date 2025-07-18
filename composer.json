@@ -11,7 +11,6 @@
     "require": {
         "php": ">=8.0",
         "monolog/monolog": "^3.0",
-        "vlucas/phpdotenv": "^5.0",
         "wp-cli/wp-cli-bundle": "^2.12",
         "php-di/php-di": "^7.0"
     },
