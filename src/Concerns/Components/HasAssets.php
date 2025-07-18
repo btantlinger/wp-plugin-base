@@ -4,7 +4,6 @@ namespace WebMoves\PluginBase\Concerns\Components;
 trait HasAssets
 {
 	use TraitRegistrationHelper;
-
 	protected function register_has_assets(): void
 	{
 		$this->ensure_component_registration();

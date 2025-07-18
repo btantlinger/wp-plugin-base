@@ -2,6 +2,7 @@
 
 namespace WebMoves\PluginBase\Templates;
 
+use WebMoves\PluginBase\Contracts\PluginCoreInterface;
 use WebMoves\PluginBase\Contracts\Templates\TemplateRendererInterface;
 
 class TemplateRenderer implements TemplateRendererInterface
@@ -9,10 +10,26 @@ class TemplateRenderer implements TemplateRendererInterface
     private string $template_dir;
     private array $global_data = [];
 
-    public function __construct(string $template_dir = '')
+    public function __construct(PluginCoreInterface $core)
     {
-        $this->template_dir = $template_dir ?: $this->get_default_template_dir();
+
+		$cont = $core->get_container();
+		if($cont->has('plugin.path')) {
+			$this->template_dir = $cont->get('plugin.path') . 'templates';
+		} else {
+			$this->template_dir = $this->get_default_template_dir();
+		}
+		try {
+			$this->set_global_data( [
+				'text_domain'    => $cont->get( 'plugin.text_domain' ),
+				'plugin_url'     => $cont->get( 'plugin.url' ),
+				'plugin_path'    => $cont->get( 'plugin.path' ),
+				'plugin_version' => $cont->get( 'plugin.version' ),
+				'plugin_name'    => $cont->get( 'plugin.name' ),
+			] );
+		} catch (\Exception $e) {}
     }
+
 
     /**
      * Get the default template directory

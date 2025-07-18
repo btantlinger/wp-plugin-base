@@ -10,9 +10,9 @@ class ApiSettingsProvider implements SettingsProvider
 {
 	private SettingsManagerInterface $settings_manager;
 
-	public function __construct()
+	public function __construct(string $scope)
 	{
-		$this->settings_manager = new SettingsManager('test_plugin_api');
+		$this->settings_manager = new SettingsManager($scope);
 	}
 
 	public function settings(): SettingsManagerInterface
@@ -29,14 +29,14 @@ class ApiSettingsProvider implements SettingsProvider
 				'description' => __('Configure API connection settings.', 'test-plugin'),
 			],
 			'fields' => [
-				'api_url' => [
+				'papi_url' => [
 					'label' => __('API URL', 'test-plugin'),
 					'type' => 'url',
 					'description' => __('The API endpoint URL.', 'test-plugin'),
 					'default' => 'https://api.example.com',
 					'required' => true,
 				],
-				'api_key' => [
+				'papi_key' => [
 					'label' => __('API Key', 'test-plugin'),
 					'type' => 'text',
 					'description' => __('Your API key for authentication.', 'test-plugin'),
@@ -44,7 +44,7 @@ class ApiSettingsProvider implements SettingsProvider
 					'required' => true,
 					'attributes' => ['placeholder' => 'Enter your API key'],
 				],
-				'api_timeout' => [
+				'papi_timeout' => [
 					'label' => __('API Timeout', 'test-plugin'),
 					'type' => 'number',
 					'description' => __('Request timeout in seconds.', 'test-plugin'),

@@ -4,6 +4,7 @@ namespace WebMoves\PluginBase;
 
 use DI\Container;
 use DI\ContainerBuilder;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use WebMoves\PluginBase\Contracts\DatabaseManagerInterface;
 use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
@@ -11,11 +12,13 @@ use WebMoves\PluginBase\Contracts\Components\ComponentManagerInterface;
 use WebMoves\PluginBase\Contracts\PluginCoreInterface;
 use WebMoves\PluginBase\Logging\LoggerFactory;
 
+
 class PluginCore implements PluginCoreInterface
 {
     private Container $container;
     private string $plugin_file;
     private string $plugin_version;
+	private ?string $database_version;
     private string $plugin_name;
     private bool $initialized = false;
     /**
@@ -32,14 +35,16 @@ class PluginCore implements PluginCoreInterface
      * @param string $plugin_version The plugin version
      * @param string|null $text_domain The plugin text domain (optional, will be derived from plugin name if not provided)
      */
-    public function __construct(string $plugin_file, string $plugin_version, ?string $text_domain = null)
+    public function __construct(string $plugin_file, string $plugin_version, ?string $text_domain = null, ?string $database_version = null)
     {
         $this->plugin_file = $plugin_file;
         $this->plugin_version = $plugin_version;
+		$this->database_version = $database_version;
         $this->plugin_name = $this->extract_plugin_name($plugin_file);
         $this->text_domain = $text_domain ?? $this->derive_text_domain();
         
         $this->setup_container();
+
     }
 
     /**
@@ -100,11 +105,14 @@ class PluginCore implements PluginCoreInterface
     private function setup_container(): void
     {
         $builder = new ContainerBuilder();
-        
-        // 1. Add plugin-specific definitions FIRST (foundation values)
+	    $builder->useAutowiring(false);
+		$builder->useAttributes(false);
+
+	    // 1. Add plugin-specific definitions FIRST (foundation values)
         $builder->addDefinitions([
             'plugin.file' => $this->plugin_file,
             'plugin.version' => $this->plugin_version,
+			'plugin.database_version' => $this->database_version,
             'plugin.name' => $this->plugin_name,
             'plugin.text_domain' => $this->text_domain,
             'plugin.path' => plugin_dir_path($this->plugin_file),
@@ -129,6 +137,12 @@ class PluginCore implements PluginCoreInterface
         // 3. Load plugin config-based dependencies AFTER container is built
         $this->load_plugin_config_dependencies();
     }
+
+	private function initialize_components(): void
+	{
+		$handler_manager = $this->get(ComponentManagerInterface::class);
+		$handler_manager->initialize_components();
+	}
 
     private function load_plugin_config_dependencies(): void
     {
@@ -184,7 +198,7 @@ class PluginCore implements PluginCoreInterface
         $this->container->set($id, $value);
 		$object = $this->container->get($id);
 		if($auto_register_components && $object instanceof ComponentInterface) {
-			$this->register_component($id, $object);
+			$this->register_component($object);
 		}
     }
 
@@ -205,23 +219,39 @@ class PluginCore implements PluginCoreInterface
 
 
     /**
-     * Register an event handler
+     * Register a component
      *
-     * @param \WebMoves\PluginBase\Contracts\Components\ComponentInterface $handler
+     * @param \WebMoves\PluginBase\Contracts\Components\ComponentInterface $component
      *
      * @return void
      */
-    public function register_component(string $id, ComponentInterface $handler): void
+    public function register_component(ComponentInterface $component): void
     {
 	    /**
 	     * @var $component_manager ComponentManagerInterface
 	     */
         $component_manager = $this->get(ComponentManagerInterface::class);
-        $component_manager->register_component($id, $handler);
+        $component_manager->register_component($component);
     }
 
+	/**
+	 * Check if the given component is registered.
+	 *
+	 * @param ComponentInterface $component The component to check.
+	 *
+	 * @return bool True if the component is registered, false otherwise.
+	 */
+	public function is_registered(ComponentInterface $component): bool
+	{
+		/**
+		 * @var $component_manager ComponentManagerInterface
+		 */
+		$component_manager = $this->get(ComponentManagerInterface::class);
+		return $component_manager->is_registered($component);
+	}
 
-    /**
+
+	/**
      * Handle plugins_loaded action
      *
      * @return void
@@ -230,10 +260,9 @@ class PluginCore implements PluginCoreInterface
     {
 		$this->get_logger()->info( $this->get_name() . ' on_plugins_loaded', ['version' => $this->get_version()] );
         $database_manager = $this->get(DatabaseManagerInterface::class);
-        $handler_manager = $this->get(ComponentManagerInterface::class);
-
         $database_manager->maybe_upgrade();
-        $handler_manager->initialize_components();
+
+	    $this->initialize_components();
     }
 
     /**
@@ -316,10 +345,16 @@ class PluginCore implements PluginCoreInterface
      *
      * @return Container
      */
-    public function get_container(): Container
+    public function get_container(): ContainerInterface
     {
         return $this->container;
     }
+
+
+	public function get_db(): \wpdb {
+		global $wpdb;
+		return $wpdb;
+	}
 
     /**
      * Get plugin version
@@ -330,6 +365,11 @@ class PluginCore implements PluginCoreInterface
     {
         return $this->plugin_version;
     }
+
+	public function get_database_version(): ?string
+	{
+		return $this->database_version;
+	}
 
     /**
      * Get plugin name

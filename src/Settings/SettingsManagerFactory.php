@@ -10,13 +10,14 @@ use WebMoves\PluginBase\Contracts\Settings\SettingsManagerInterface;
  */
 class SettingsManagerFactory implements SettingsManagerFactoryInterface
 {
+
     /**
      * Create a SettingsManager instance with automatic prefix based on calling class
      *
      * @param object|string|null $context The class instance, class name, or null for auto-detection
      * @return SettingsManagerInterface
      */
-    public function create($context = null): SettingsManagerInterface
+    public function create(object|string|null $context = null): SettingsManagerInterface
     {
         $prefix = $this->generate_prefix($context);
         return new SettingsManager($prefix);
@@ -39,7 +40,7 @@ class SettingsManagerFactory implements SettingsManagerFactoryInterface
      * @param object|string|null $context The class instance, class name, or null for auto-detection
      * @return string The generated prefix
      */
-    public function generate_prefix($context = null): string
+    public function generate_prefix(object|string|null $context = null): string
     {
         if (is_string($context)) {
             // Explicit class name provided

@@ -3,6 +3,7 @@
 namespace WebMoves\PluginBase\Contracts;
 
 use DI\Container;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
 
@@ -35,15 +36,17 @@ interface PluginCoreInterface
 	public function get_logger(?string $channel=null): LoggerInterface;
 
 
+	public function is_registered(ComponentInterface $component): bool;
+
+
 	/**
-	 * Register a component with a unique identifier and its corresponding handler.
+	 * Register a component
 	 *
-	 * @param string $id The unique identifier for the component.
-	 * @param ComponentInterface $handler The handler associated with the component.
+	 * @param ComponentInterface $component The component
 	 *
 	 * @return void
 	 */
-	public function register_component(string $id, ComponentInterface $handler): void;
+	public function register_component(ComponentInterface $component): void;
 
 
 	/**
@@ -51,7 +54,17 @@ interface PluginCoreInterface
 	 *
 	 * @return Container
 	 */
-	public function get_container(): Container;
+	public function get_container(): ContainerInterface;
+	
+
+
+	/**
+	 * Get WordPress database object
+	 *
+	 * @return \wpdb
+	 */
+	public function get_db(): \wpdb;
+
 
 	/**
 	 * Get plugin version
@@ -59,6 +72,9 @@ interface PluginCoreInterface
 	 * @return string
 	 */
 	public function get_version(): string;
+
+
+	public function get_database_version(): ?string;
 
 	/**
 	 * Get plugin name

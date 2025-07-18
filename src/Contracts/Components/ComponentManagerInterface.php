@@ -5,16 +5,15 @@ namespace WebMoves\PluginBase\Contracts\Components;
 
 interface ComponentManagerInterface {
 	/**
-	 * Register a handler
+	 * Register a component
 	 *
 	 * @param ComponentInterface $component
-	 *
 	 * @return void
 	 */
-	public function register_component(string $id, ComponentInterface $component): void;
+	public function register_component(ComponentInterface $component): void;
 
 	/**
-	 * Initialize all registered handlers
+	 * Initialize all registered components
 	 *
 	 * @return void
 	 */
@@ -23,34 +22,24 @@ interface ComponentManagerInterface {
 	/**
 	 * Get all registered components
 	 *
-	 * @return array<string,ComponentInterface> Associative array of components with component ID as key
+	 * @return ComponentInterface[]
 	 */
 	public function get_components(): array;
 
-
 	/**
-	 * Get a component
+	 * Check if a component instance is registered
 	 *
-	 * @param string $id
-	 *
-	 * @return ComponentInterface|null
-	 */
-	public function get_component(string $id): ?ComponentInterface;
-
-	/**
-	 * Check if a component is registered
-	 *
-	 * @param string $id
+	 * @param ComponentInterface $component
 	 * @return bool
 	 */
-	public function has_component(string $id): bool;
+	public function is_registered(ComponentInterface $component): bool;
 
 	/**
-	 * Remove a component by class name
+	 * Remove a component instance
 	 *
-	 * @param string $class_name
-	 * @return bool
+	 * @param ComponentInterface $component
+	 * @return void
 	 */
-	public function remove_component(string $id): void;
+	public function remove_component(ComponentInterface $component): void;
 
 }

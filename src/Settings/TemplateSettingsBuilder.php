@@ -20,9 +20,9 @@ class TemplateSettingsBuilder extends AbstractSettingBuilder
 		return 'settings/fields/' . $field_type;
 	}
 
-	protected function get_page_template_name(): string
+	protected function get_form_template_name(): string
 	{
-		return 'settings/' . $this->get_page();
+		return 'settings/' . $this->get_settings_group();
 	}
 
 
@@ -34,11 +34,11 @@ class TemplateSettingsBuilder extends AbstractSettingBuilder
 		$this->template_renderer->display($tmpl, $args);
 	}
 
-	public function render_settings_page(): void {
-		$this->template_renderer->display($this->get_page_template_name(), [
+	public function render_form(): void {
+		$this->template_renderer->display($this->get_form_template_name(), [
 			'providers' => $this->get_providers(),
 			'settings_group' => $this->get_settings_group(),
-			'page' => $this->get_page()
+			'page' => $this->get_settings_page()
 		]);
 	}
 }

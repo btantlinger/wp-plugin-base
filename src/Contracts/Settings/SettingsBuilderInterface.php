@@ -30,5 +30,21 @@ interface SettingsBuilderInterface extends ComponentInterface
      *
      * @return void
      */
-    public function render_settings_page(): void;
+    public function render_form(): void;
+	
+	
+	public function get_settings_group(): string;
+	
+
+	
+	public function get_settings_page();
+	
+
+
+	/**
+	 * Get all registered settings providers
+	 *
+	 * @return SettingsProvider[] Array of registered settings providers
+	 */
+	public function get_providers(): array;
 }

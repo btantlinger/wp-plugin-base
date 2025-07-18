@@ -11,7 +11,7 @@ abstract class AbstractPlugin {
 
 	protected PluginCoreInterface $core;
 	protected ?DatabaseManagerInterface $database_manager = null;
-	protected ?string $database_version = null;
+
 
 	public static function init_plugin(
 		string $plugin_file, 
@@ -23,8 +23,8 @@ abstract class AbstractPlugin {
 			throw new \LogicException('Plugin already initialized');
 		}
 
-		$core = static::create_core($plugin_file, $plugin_version, $text_domain);
-		static::$instance = new static($core, $database_version);
+		$core = static::create_core($plugin_file, $plugin_version, $text_domain, $database_version);
+		static::$instance = new static($core);
 		return static::$instance;
 	}
 
@@ -36,18 +36,14 @@ abstract class AbstractPlugin {
 		return static::$instance;
 	}
 
-	protected static function create_core(string $plugin_file, string $plugin_version, ?string $text_domain = null): PluginCoreInterface
+	protected static function create_core(string $plugin_file, string $plugin_version, ?string $text_domain = null, ?string $database_version = null): PluginCoreInterface
 	{
-		return new PluginCore($plugin_file, $plugin_version, $text_domain);
+		return new PluginCore($plugin_file, $plugin_version, $text_domain, $database_version);
 	}
 
-	private function __construct(PluginCoreInterface $core, ?string $database_version = null)
+	private function __construct(PluginCoreInterface $core)
 	{
 		$this->core = $core;
-		$this->database_version = $database_version;
-
-		// Set custom database version if provided
-		$this->set_database_version();
 
 		// Initialize database manager if the plugin needs it
 		$this->init_database();
@@ -60,15 +56,7 @@ abstract class AbstractPlugin {
 		$this->initialize();
 	}
 
-	/**
-	 * Set database version in the DI container if plugin defines one
-	 */
-	private function set_database_version(): void
-	{
-		if ($this->database_version !== null) {
-			$this->core->set('plugin.database_version', $this->database_version);
-		}
-	}
+
 
 	/**
 	 * Initialize database management
@@ -80,8 +68,12 @@ abstract class AbstractPlugin {
 			$this->database_manager = $this->core->get(DatabaseManagerInterface::class);
 
 			// Register tables and callbacks - upgrades happen later in plugins_loaded
-			$this->register_tables();
-			$this->register_version_callbacks();
+			foreach($this->get_database_tables() as $table_name => $table_definition) {
+				$this->database_manager->register_table($table_name, $table_definition);
+			}
+			foreach($this->get_database_upgrade_callbacks() as $callback) {
+				$this->database_manager->register_upgrade_callback($callback);
+			}
 		}
 	}
 
@@ -91,23 +83,39 @@ abstract class AbstractPlugin {
 	 */
 	protected function should_init_database(): bool
 	{
-		return $this->database_version !== null;
+		return $this->core->get_database_version() !== null;
 	}
 
 	/**
-	 * Register your database tables here
+	 * Get database tables definitions
+	 *
+	 * Should return an associative array where:
+	 * - key: table name/identifier
+	 * - value: SQL CREATE TABLE statement
+	 *
+	 * @return array<string,string> Array of table definitions
 	 */
-	protected function register_tables(): void
-	{
+	protected function get_database_tables(): array {
 		// Override in child classes
+		return [];
 	}
 
 	/**
-	 * Register version-specific upgrade callbacks
+	 * Get database version upgrade callbacks
+	 *
+	 * Returns an array of callables that will be executed in order to perform
+	 * database version upgrades. Each callable should handle upgrading the database
+	 * schema or data from one version to another.
+	 *
+	 * Each callback function should accept two parameters:
+	 *
+	 * @param string $old_version The previous database version
+	 * @param string $current_version The current database version being upgraded to
+	 *
+	 * @return array<callable> Array of upgrade callback functions
 	 */
-	protected function register_version_callbacks(): void
-	{
-		// Override in child classes
+	protected function get_database_upgrade_callbacks(): array {
+		return [];
 	}
 
 	public function initialize(): void
@@ -123,18 +131,5 @@ abstract class AbstractPlugin {
 	public function get_core(): PluginCoreInterface
 	{
 		return $this->core;
-	}
-
-	public function get_database_manager(): ?DatabaseManagerInterface
-	{
-		return $this->database_manager;
-	}
-
-	/**
-	 * Get the database version for this plugin
-	 */
-	public function get_database_version(): ?string
-	{
-		return $this->database_version;
 	}
 }

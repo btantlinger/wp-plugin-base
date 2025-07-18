@@ -9,35 +9,17 @@ use WebMoves\PluginBase\Contracts\Templates\TemplateRendererInterface;
 use WebMoves\PluginBase\Templates\TemplateRenderer;
 use WebMoves\PluginBase\Settings\SettingsManagerFactory;
 use WebMoves\PluginBase\Logging\LoggerFactory;
+use WebMoves\PluginBase\Contracts\PluginCoreInterface;
 use Psr\Log\LoggerInterface;
 use function DI\create;
 use function DI\get;
-use function DI\autowire;
 use function DI\factory;
 
 return [
-
-	DatabaseManagerInterface::class => factory(function ($container) {
-		$plugin_version = $container->get('plugin.version');
-		$plugin_name = $container->get('plugin.name');
-		
-		// Check if plugin has defined a specific database version
-		$db_version = $plugin_version; // Default to plugin version
-		
-		try {
-			// Try to get custom database version from container
-			$db_version = $container->get('plugin.database_version');
-		} catch (\Exception $e) {
-			// No custom database version defined, use plugin version
-		}
-		
-		return new DatabaseManager($db_version, $plugin_name);
-	}),
-
-	ComponentManagerInterface::class => autowire(ComponentManager::class),
-
-	// Settings Manager Factory
-	SettingsManagerFactoryInterface::class => autowire(SettingsManagerFactory::class),
+	DatabaseManagerInterface::class => create(DatabaseManager::class)->constructor(get(PluginCoreInterface::class)),
+	ComponentManagerInterface::class => create(ComponentManager::class),
+	SettingsManagerFactoryInterface::class => create(SettingsManagerFactory::class),
+	TemplateRendererInterface::class => create(TemplateRenderer::class)->constructor(get(PluginCoreInterface::class)),
 
 	// Logger Factory
 	LoggerFactory::class => create(LoggerFactory::class)
@@ -76,20 +58,4 @@ return [
 			'api'
 		);
 	}),
-
-	// Templates renderer with proper plugin-specific configuration
-	TemplateRendererInterface::class => function ($container) {
-	    $template_dir = $container->get('plugin.path') . 'templates';
-	    $renderer = new TemplateRenderer($template_dir);
-
-	    // Set up global data with plugin-specific values
-	    $renderer->set_global_data([
-		    'text_domain' => $container->get('plugin.text_domain'),
-		    'plugin_url' => $container->get('plugin.url'),
-		    'plugin_path' => $container->get('plugin.path'),
-		    'plugin_version' => $container->get('plugin.version'),
-		    'plugin_name' => $container->get('plugin.name'),
-	    ]);
-	    return $renderer;
-    },
 ];

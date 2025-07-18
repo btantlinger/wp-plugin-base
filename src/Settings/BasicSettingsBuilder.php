@@ -7,28 +7,30 @@ use WebMoves\PluginBase\Contracts\Templates\TemplateRendererInterface;
 
 class BasicSettingsBuilder extends AbstractSettingBuilder
 {
-	public function __construct(PluginCoreInterface $core, string $settingsGroup, string $page) {
+	public function __construct(PluginCoreInterface $core, string $settingsGroup, string $page)
+	{
 		parent::__construct($core, $settingsGroup, $page);
 	}
 
-	public function render_settings_field( array $args ): void {
+	public function render_settings_field( array $args ): void
+	{
 		$this->renderer_default_field($args);
 	}
 
-	public function render_settings_page(): void {
+	public function render_form(): void
+	{
 		$this->render_default_page();
 	}
 
 
-	protected function render_default_page(): void {
-		echo  '<div class="wrap">';
-		echo '<h1>' . esc_html(get_admin_page_title()) . "</h1>";
+	protected function render_default_page(): void
+	{
 		echo '<form method="post" action="options.php">';
 		settings_fields($this->get_settings_group());
-		do_settings_sections($this->get_page());
+		do_settings_sections($this->get_settings_page());
 		submit_button();
 		echo '</form>';
-		echo '</div>';
+
 	}
 
 	protected function renderer_default_field(array $args): void

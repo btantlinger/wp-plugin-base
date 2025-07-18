@@ -2,6 +2,8 @@
 
 namespace WebMoves\PluginBase;
 
+use WebMoves\PluginBase\Contracts\PluginCoreInterface;
+
 class DatabaseManager implements \WebMoves\PluginBase\Contracts\DatabaseManagerInterface
 {
     private string $version;
@@ -10,11 +12,12 @@ class DatabaseManager implements \WebMoves\PluginBase\Contracts\DatabaseManagerI
     private array $tables = [];
     private array $version_callbacks = [];
 
-    public function __construct(string $version, string $plugin_name = 'plugin-base')
+    public function __construct(PluginCoreInterface $core)
     {
-        $this->version = $version;
-        $this->plugin_name = $plugin_name;
-        $this->version_option_name = $this->generate_version_option_name($plugin_name);
+		$db_ver = $core->get_database_version();
+        $this->version = $db_ver ? $db_ver : '1.0.0';
+        $this->plugin_name = $core->get_name();
+        $this->version_option_name = $this->generate_version_option_name($this->plugin_name);
     }
 
     /**

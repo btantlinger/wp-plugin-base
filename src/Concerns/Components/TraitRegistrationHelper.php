@@ -2,6 +2,8 @@
 
 namespace WebMoves\PluginBase\Concerns\Components;
 
+use WebMoves\PluginBase\Utils;
+
 trait TraitRegistrationHelper {
 	private static array $trait_cache = [];
 
@@ -27,8 +29,7 @@ trait TraitRegistrationHelper {
 
 	private function has_component_registration(): bool
 	{
-		// Single call to class_uses() with full namespace check
-		return isset(class_uses($this)[ComponentRegistration::class]);
+		$traits = Utils::get_all_traits($this);
+		return in_array(ComponentRegistration::class, $traits);
 	}
-
 }

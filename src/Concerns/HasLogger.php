@@ -20,7 +20,7 @@ trait HasLogger {
 		if (!$this->logger) {
 			$core = $this->get_plugin_core();
 			if ($core) {
-				$this->logger = $core->get_logger();
+				$this->logger = $core->get_logger($this->get_log_channel());
 			} else {
 				$this->logger = LoggerFactory::createLogger('plugin', null, $this->get_log_channel());
 			}

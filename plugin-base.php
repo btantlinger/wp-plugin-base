@@ -26,6 +26,8 @@ define('WM_PLUGIN_BASE_FILE', __FILE__);
 define('WM_PLUGIN_BASE_PATH', plugin_dir_path(__FILE__));
 define('WM_PLUGIN_BASE_URL', plugin_dir_url(__FILE__));
 
+
+
 // Load Composer autoloader
 require_once WM_PLUGIN_BASE_PATH . 'vendor/autoload.php';
 

@@ -2,6 +2,7 @@
 
 namespace WebMoves\PluginBase\Settings;
 
+use Psr\Log\LoggerInterface;
 use WebMoves\PluginBase\Contracts\PluginCoreInterface;
 use WebMoves\PluginBase\Contracts\Settings\SettingsProvider;
 
@@ -12,24 +13,32 @@ abstract class AbstractSettingBuilder implements \WebMoves\PluginBase\Contracts\
 	private array $providers = [];
 	private string $text_domain;
 
+	protected LoggerInterface $logger;
+
+	protected FlashData $flash;
+
+
 	public function __construct(PluginCoreInterface $core, string $settingsGroup, string $page)
 	{
 		$this->settingsGroup = $settingsGroup;
 		$this->page = $page;
-		$this->text_domain = $core->get_text_domain();;
+		$this->text_domain = $core->get_text_domain();
+		$this->logger = $core->get_logger('app');
+		$this->flash = new FlashData($page);
 	}
 
-	protected function get_settings_group(): string
+
+	public function get_settings_group(): string
 	{
 		return $this->settingsGroup;
 	}
 
-	protected function get_page(): string
+	public function get_settings_page(): string
 	{
 		return $this->page;
 	}
 
-	protected function get_providers(): array
+	public function get_providers(): array
 	{
 		return $this->providers;
 	}
@@ -42,7 +51,9 @@ abstract class AbstractSettingBuilder implements \WebMoves\PluginBase\Contracts\
 	public function register(): void
 	{
 		add_action('admin_init', [$this, 'register_settings']);
+		add_action('current_screen', [$this, 'handle_settings_success']);
 	}
+
 
 	public function register_settings(): void
 	{
@@ -50,6 +61,16 @@ abstract class AbstractSettingBuilder implements \WebMoves\PluginBase\Contracts\
 			$this->register_provider_configuration($provider);
 		}
 	}
+
+	public function handle_settings_success(): void
+	{
+		// Only add success message if we processed a submission and have no errors
+		$settings_updated = isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'true';
+		if ($settings_updated && $this->is_current_settings_page() && !$this->flash->has_errors()) {
+			$this->flash->add_success('Settings saved successfully!');
+		}
+	}
+
 
 	private function register_provider_configuration(SettingsProvider $provider): void
 	{
@@ -116,11 +137,15 @@ abstract class AbstractSettingBuilder implements \WebMoves\PluginBase\Contracts\
 			$sanitized_value = $this->sanitize_field_value($value, $field_config);
 
 			// Check required fields
-			if (!empty($field_config['required']) && empty($sanitized_value)) {
-				$errors[$field_key] = sprintf(
-					__('%s is required.', $this->text_domain),
-					$field_config['label']
-				);
+			if ((!empty($field_config['required'])) && empty($sanitized_value)) {
+
+				$req_validator = FieldValidators::required($this->get_text_domain());
+				if(empty($field_config['validate_callback'])) {
+					$field_config['validate_callback'] = $req_validator;
+				} else {
+					$validators = FieldValidators::combine([$field_config['validate_callback'], $req_validator]);
+					$field_config['validate_callback'] = $validators;
+				}
 			}
 
 			// Custom validation
@@ -134,28 +159,33 @@ abstract class AbstractSettingBuilder implements \WebMoves\PluginBase\Contracts\
 			$sanitized[$field_key] = $sanitized_value;
 		}
 
-		// If there are errors, preserve user input in session
 		if (!empty($errors)) {
-			foreach ($errors as $field_key => $error_message) {
-				add_settings_error(
-					$this->settingsGroup,
-					$field_key,
-					$error_message,
-					'error'
-				);
-			}
+			// Add errors as notices
+			$this->flash->add_field_errors($errors);
 
-			// ✅ Store as flash data - will survive ONE request only
-			$this->store_flash_data($provider, $sanitized);
+			// Store form data for redisplay
+			$this->flash->set_form_data($provider->settings()->get_settings_scope(), $sanitized);
 
-			// Return existing values (no save), but form will show user input
 			return $provider->settings()->get_all_scoped_options();
 		}
+			// Success
+		$this->flash->clear( 'form_' . $provider->settings()->get_settings_scope() );
 
-		// ✅ SUCCESS - clear any flash data and save
-		$this->clear_flash_data($provider);
 		return $sanitized;
 	}
+
+
+	private function is_current_settings_page(): bool
+	{
+		$screen = get_current_screen();
+		if (!$screen) {
+			return false;
+		}
+
+		// Check if the current page matches this builder's page
+		return strpos($screen->id, $this->page) !== false;
+	}
+
 
 	private function sanitize_field_value($value, array $field_config)
 	{
@@ -179,94 +209,42 @@ abstract class AbstractSettingBuilder implements \WebMoves\PluginBase\Contracts\
 		}
 	}
 
-	/**
-	 * Store user input as flash data (survives exactly one request)
-	 */
-	private function store_flash_data(SettingsProvider $provider, array $input): void
-	{
-		$user_id = get_current_user_id();
-		if (!$user_id) {
-			return;
-		}
-
-		$flash_key = $this->get_flash_key($provider);
-
-		// Store with flash flag
-		update_user_meta($user_id, $flash_key, [
-			'data' => $input,
-			'is_flash' => true,
-			'timestamp' => time()
-		]);
-	}
-
-	/**
-	 * Get flash data (and mark it for deletion)
-	 */
-	private function get_flash_data(SettingsProvider $provider): ?array
-	{
-		$user_id = get_current_user_id();
-		if (!$user_id) {
-			return null;
-		}
-
-		$flash_key = $this->get_flash_key($provider);
-		$flash_data = get_user_meta($user_id, $flash_key, true);
-
-		if ($flash_data && isset($flash_data['is_flash']) && $flash_data['is_flash']) {
-			// Mark for deletion at end of request
-			add_action('wp_footer', function() use ($user_id, $flash_key) {
-				delete_user_meta($user_id, $flash_key);
-			});
-			add_action('admin_footer', function() use ($user_id, $flash_key) {
-				delete_user_meta($user_id, $flash_key);
-			});
-
-			return $flash_data['data'];
-		}
-
-		return null;
-	}
-
-	/**
-	 * Clear flash data immediately
-	 */
-	private function clear_flash_data(SettingsProvider $provider): void
-	{
-		$user_id = get_current_user_id();
-		if (!$user_id) {
-			return;
-		}
-
-		$flash_key = $this->get_flash_key($provider);
-		delete_user_meta($user_id, $flash_key);
-	}
-
-	/**
-	 * Get flash data key
-	 */
-	private function get_flash_key(SettingsProvider $provider): string
-	{
-		return 'flash_settings_' . $this->settingsGroup . '_' . $provider->settings()->get_settings_scope();
-	}
 
 	/**
 	 * Get the value to display in the form field
 	 */
 	protected function get_field_display_value(SettingsProvider $provider, string $field_key, $default_value)
 	{
-		// Check for flash data first
-		$flash_data = $this->get_flash_data($provider);
-
-		if ($flash_data !== null && isset($flash_data[$field_key])) {
-			return $flash_data[$field_key];
+		// Check for flash data first (from validation errors)
+		$flash_value = $this->get_flash_value($provider, $field_key, null);
+		if ($flash_value !== null) {
+			return $flash_value;
 		}
 
 		// Fall back to saved value or default
 		return $provider->settings()->get_scoped_option($field_key, $default_value);
 	}
 
+	protected function get_flash_value(SettingsProvider $provider, string $field_key, $default = null)
+	{
+		$form_key = $provider->settings()->get_settings_scope();
+		$flash_data = $this->flash->get_form_data($form_key);
+
+		// If no flash data exists, return the default (null)
+		if (empty($flash_data)) {
+			return $default;
+		}
+
+		// Return the specific field value or default
+		return $flash_data[$field_key] ?? $default;
+	}
+
 	public function get_priority(): int {
 		return 10;
+	}
+
+	public function get_text_domain(): string {
+		return $this->text_domain;
 	}
 
 	public function can_register(): bool {

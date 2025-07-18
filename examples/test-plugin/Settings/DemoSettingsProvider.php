@@ -10,9 +10,9 @@ class DemoSettingsProvider implements SettingsProvider
 {
 	private SettingsManagerInterface $settings_manager;
 
-	public function __construct()
+	public function __construct(string $scope)
 	{
-		$this->settings_manager = new SettingsManager('test_plugin_demo');
+		$this->settings_manager = new SettingsManager($scope);
 	}
 
 	public function settings(): SettingsManagerInterface

@@ -2,20 +2,30 @@
 
 namespace WebMoves\PluginBase\Examples\Hooks;
 
+use Psr\Log\LoggerInterface;
 use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
+use WebMoves\PluginBase\Contracts\PluginCoreInterface;
 use WebMoves\PluginBase\Settings\BasicSettingsBuilder;
 
 class AdminMenuHandler implements ComponentInterface
 {
 	private BasicSettingsBuilder $settings_builder;
 
-	public function __construct(BasicSettingsBuilder $settings_builder)
+	protected PluginCoreInterface $core;
+
+	protected LoggerInterface $logger;
+
+	public function __construct(PluginCoreInterface $core, BasicSettingsBuilder $settings_builder)
 	{
 		$this->settings_builder = $settings_builder;
+		$this->core = $core;
+		$this->logger = $core->get_logger('app');
+
 	}
 
 	public function register(): void
 	{
+		$this->logger->info('am handler register: ' . $this->settings_builder->get_settings_page());
 		//$this->settings_builder->register();
 		add_action('admin_menu', [$this, 'add_admin_menu']);
 	}
@@ -33,7 +43,9 @@ class AdminMenuHandler implements ComponentInterface
 
 	public function render_settings_page(): void
 	{
-		$this->settings_builder->render_settings_page();
+
+		$this->logger->info('am handler callback (render_settings_page): ' . $this->settings_builder->get_settings_page());
+		$this->settings_builder->render_form();
 	}
 
 	public function get_priority(): int {
