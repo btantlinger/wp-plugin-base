@@ -2,7 +2,7 @@
 
 namespace WebMoves\PluginBase\Contracts\Settings;
 
-interface SettingsProvider
+interface SettingsProviderInterface
 {
 
 

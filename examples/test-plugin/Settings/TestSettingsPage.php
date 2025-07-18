@@ -9,7 +9,6 @@ use WebMoves\PluginBase\Settings\SettingsPage;
 class TestSettingsPage extends SettingsPage {
 
 	public function __construct(PluginCoreInterface $core, string $pageTitle, string $menuTitle, ?string $parent_slug=null) {
-
 		$builder = new BasicSettingsBuilder(
 			$core,
 			"foo_plugin_settings",
@@ -19,7 +18,6 @@ class TestSettingsPage extends SettingsPage {
 				new ApiSettingsProvider('foo-api')
 			]
 		);
-
 		parent::__construct($builder, $pageTitle, $menuTitle, $parent_slug);
 	}
 }

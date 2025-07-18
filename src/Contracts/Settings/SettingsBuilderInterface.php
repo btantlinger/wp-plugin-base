@@ -36,7 +36,7 @@ interface SettingsBuilderInterface extends ComponentInterface
 	/**
 	 * Get all registered settings providers
 	 *
-	 * @return SettingsProvider[] Array of registered settings providers
+	 * @return SettingsProviderInterface[] Array of registered settings providers
 	 */
 	public function get_providers(): array;
 

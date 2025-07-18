@@ -1,10 +1,10 @@
-# WordPress Plugin Base Framework
+# WordPress Plugin Base
 
-A modern WordPress plugin development framework that provides a solid foundation for creating well-structured, maintainable WordPress plugins. This framework uses a service-based architecture with dependency injection, organized hook management, and clean separation of concerns.
+A modern WordPress plugin base that provides a solid foundation for creating well-structured, maintainable WordPress plugins. This library uses a service-based architecture with dependency injection, organized hook management, and clean separation of concerns.
 
 ## Overview
 
-The WordPress Plugin Base Framework is designed to help developers create WordPress plugins with:
+The WordPress Plugin Base is designed to help developers create WordPress plugins with:
 
 - **Clean Architecture**: Separation of concerns and modular design
 - **Modern PHP Practices**: Type safety, dependency injection, and PSR standards
@@ -35,7 +35,7 @@ The WordPress Plugin Base Framework is designed to help developers create WordPr
 
 ## Architecture
 
-The framework follows a service-based architecture with several key components:
+The Plugin Base follows a service-based architecture with several key components:
 
 ### 1. AbstractPlugin
 
@@ -76,7 +76,7 @@ Modular functionality via traits:
 
 ### 5. Component Registration
 
-The framework uses a component-based architecture where functionality is encapsulated in classes that implement the `ComponentInterface`. This interface defines three key methods:
+The Plugin Base uses a component-based architecture where functionality is encapsulated in classes that implement the `ComponentInterface`. This interface defines three key methods:
 
 #### ComponentInterface Methods
 
@@ -99,7 +99,7 @@ The framework uses a component-based architecture where functionality is encapsu
 
 #### The ComponentRegistration Trait
 
-The framework provides a `ComponentRegistration` trait that simplifies component implementation:
+The Plugin Base provides a `ComponentRegistration` trait that simplifies component implementation:
 
 1. **Automatic Registration**: The trait provides a final implementation of the `register()` method required by `ComponentInterface`, so you don't need to implement it yourself.
 
@@ -386,7 +386,7 @@ Configuration files are stored in the `/config` directory:
 
 ## Creating a New Plugin
 
-To create a new plugin using this framework:
+To create a new plugin using this Plugin Base:
 
 1. Create a new class that extends `AbstractPlugin`
 2. Implement the `initialize()` method to set up your plugin
@@ -427,27 +427,47 @@ Your plugin class:
 namespace YourNamespace;
 
 use WebMoves\PluginBase\AbstractPlugin;
-use WebMoves\PluginBase\Logging\LoggerFactory;
+use WebMoves\PluginBase\Settings\MenuAdminPage;
+use WebMoves\PluginBase\Settings\SettingsPage;
+use WebMoves\PluginBase\Settings\BasicSettingsBuilder;
 
 class YourPlugin extends AbstractPlugin
 {
     public function initialize(): void
     {
         // Initialize your plugin
-        $logger = LoggerFactory::createLogger($this->core->get_name(), $this->core->get_plugin_file(), 'app');
+        $logger = $this->core->get_logger('app');
         $logger->info('Plugin initialized');
-        
-        // Set up admin pages, settings, etc.
     }
     
     public function get_services(): array
     {
+        $plugin_slug = 'your-plugin';
+        
+        // Create a settings builder with providers
+        $builder = new BasicSettingsBuilder(
+            $this->get_core(),
+            'your_plugin_settings',
+            'your-plugin-settings',
+            [
+                new YourSettingsProvider('your-scope')
+            ]
+        );
+        
         return [
-            // Register your services here
-            'your-service' => new YourService(),
-            YourService::class => function() {
-                return new YourService();
-            },
+            // Main plugin page
+            MenuAdminPage::class => new MenuAdminPage($plugin_slug, 'Your Plugin', 'Your Plugin'),
+            
+            // Settings page as submenu
+            SettingsPage::class => new SettingsPage(
+                $builder,
+                'Your Plugin Settings',
+                'Settings',
+                $plugin_slug
+            ),
+            
+            // Other services
+            YourService::class => new YourService(),
         ];
     }
 }
@@ -458,7 +478,7 @@ class YourPlugin extends AbstractPlugin
 
 ### Dependency Injection
 
-The framework uses PHP-DI for dependency injection. Services should be registered with the container in the `get_services()` method of your plugin class:
+The Plugin Base uses PHP-DI for dependency injection. Services should be registered with the container in the `get_services()` method of your plugin class:
 
 ```php
 public function get_services(): array
@@ -477,25 +497,11 @@ public function get_services(): array
 Type-safe settings with automatic prefixing and validation:
 
 ```php
-use WebMoves\PluginBase\Contracts\Settings\SettingsProvider;
-use WebMoves\PluginBase\Contracts\Settings\SettingsManagerInterface;
-use WebMoves\PluginBase\Contracts\Settings\SettingsManagerFactoryInterface;
+use WebMoves\PluginBase\Contracts\Settings\SettingsProviderInterface;
+use WebMoves\PluginBase\Settings\AbstractSettingsProvider;
 
-class ApiSettingsProvider implements SettingsProvider
+class ApiSettingsProvider extends AbstractSettingsProvider
 {
-    private SettingsManagerInterface $settings_manager;
-
-    public function __construct(SettingsManagerFactoryInterface $factory)
-    {
-        // Automatically creates prefix based on class namespace
-        $this->settings_manager = $factory->create($this);
-    }
-
-    public function settings(): SettingsManagerInterface
-    {
-        return $this->settings_manager;
-    }
-
     public function get_settings_configuration(): array
     {
         return [
@@ -506,7 +512,6 @@ class ApiSettingsProvider implements SettingsProvider
             ],
             'fields' => [
                 'api_key' => [
-                    'id' => 'api_key',
                     'label' => __('API Key', 'my-plugin'),
                     'type' => 'text',
                     'description' => __('Enter your API key.', 'my-plugin'),
@@ -522,7 +527,7 @@ class ApiSettingsProvider implements SettingsProvider
 
 ### Admin Pages
 
-The framework provides a flexible system for creating admin pages in the WordPress dashboard:
+The Plugin Base provides a flexible system for creating admin pages in the WordPress dashboard:
 
 #### Types of Admin Pages
 
@@ -537,24 +542,31 @@ To create a top-level menu page:
 ```php
 use WebMoves\PluginBase\Settings\MenuAdminPage;
 
-// In your plugin's initialize() method
-$page = new MenuAdminPage(
-    'my-plugin',           // Menu slug
-    'My Plugin',           // Page title
-    'My Plugin'            // Menu title
-);
-
-// Register the page with the plugin core
-$this->get_core()->set(MenuAdminPage::class, $page);
+// In your plugin's get_services() method
+public function get_services(): array
+{
+    $plugin_slug = 'my-plugin';
+    return [
+        MenuAdminPage::class => new MenuAdminPage(
+            $plugin_slug,           // Menu slug
+            'My Plugin',            // Page title
+            'My Plugin'             // Menu title
+        ),
+    ];
+}
 ```
 
-This creates a top-level menu item in the WordPress admin. You can customize the menu by setting additional properties:
+This creates a top-level menu item in the WordPress admin. You can customize the menu by passing additional parameters to the constructor:
 
 ```php
-$page = new MenuAdminPage('my-plugin', 'My Plugin', 'My Plugin');
-$page->set_capability('manage_options');      // Required capability
-$page->set_menu_icon('dashicons-admin-tools'); // Menu icon
-$page->set_menu_position(30);                 // Menu position
+new MenuAdminPage(
+    'my-plugin',                    // Menu slug
+    'My Plugin',                    // Page title
+    'My Plugin',                    // Menu title
+    null,                           // Parent slug (null for top-level)
+    'dashicons-admin-tools',        // Menu icon
+    30                              // Menu position
+);
 ```
 
 #### Creating a Settings Page
@@ -565,26 +577,35 @@ To create a settings page that displays and manages plugin settings:
 use WebMoves\PluginBase\Settings\SettingsPage;
 use WebMoves\PluginBase\Settings\BasicSettingsBuilder;
 
-// Create a settings builder
-$builder = new BasicSettingsBuilder(
-    $this->get_core(),
-    'my_plugin_settings',      // Option name
-    'my-plugin-settings'       // Page slug
-);
-
-// Add settings providers to the builder
-$builder->add_provider(new MySettingsProvider('my-scope'));
-
-// Create a settings page
-$settings_page = new SettingsPage(
-    $builder,                  // Settings builder
-    'My Plugin Settings',      // Page title
-    'Settings',                // Menu title
-    'my-plugin'                // Parent slug (for submenu)
-);
-
-// Register the page with the plugin core
-$this->get_core()->set(SettingsPage::class, $settings_page);
+// In your plugin's get_services() method
+public function get_services(): array
+{
+    $plugin_slug = 'my-plugin';
+    
+    // Create a settings builder with providers
+    $builder = new BasicSettingsBuilder(
+        $this->get_core(),
+        'my_plugin_settings',      // Option name
+        'my-plugin-settings',      // Page slug
+        [
+            new MySettingsProvider('my-scope'),
+            new AnotherSettingsProvider('another-scope')
+        ]
+    );
+    
+    return [
+        // Main plugin page
+        MenuAdminPage::class => new MenuAdminPage($plugin_slug, 'My Plugin', 'My Plugin'),
+        
+        // Settings page as submenu
+        SettingsPage::class => new SettingsPage(
+            $builder,                  // Settings builder
+            'My Plugin Settings',      // Page title
+            'Settings',                // Menu title
+            $plugin_slug               // Parent slug (for submenu)
+        ),
+    ];
+}
 ```
 
 #### Creating a Custom Admin Page
@@ -596,16 +617,6 @@ use WebMoves\PluginBase\Settings\AbstractAdminPage;
 
 class MyCustomPage extends AbstractAdminPage
 {
-    public function __construct(string $parent_slug = null)
-    {
-        parent::__construct(
-            'my-custom-page',      // Page slug
-            'My Custom Page',      // Page title
-            'Custom Page',         // Menu title
-            $parent_slug           // Parent slug (null for top-level)
-        );
-    }
-    
     protected function render_admin_page(): void
     {
         // Render your custom page content
@@ -619,9 +630,23 @@ class MyCustomPage extends AbstractAdminPage
     }
 }
 
-// In your plugin's initialize() method
-$custom_page = new MyCustomPage('my-plugin'); // As submenu of 'my-plugin'
-$this->get_core()->set(MyCustomPage::class, $custom_page);
+// In your plugin's get_services() method
+public function get_services(): array
+{
+    $plugin_slug = 'my-plugin';
+    return [
+        // Main plugin page
+        MenuAdminPage::class => new MenuAdminPage($plugin_slug, 'My Plugin', 'My Plugin'),
+        
+        // Custom page as submenu
+        MyCustomPage::class => new MyCustomPage(
+            'my-custom-page',      // Page slug
+            'My Custom Page',      // Page title
+            'Custom Page',         // Menu title
+            $plugin_slug           // Parent slug (for submenu)
+        ),
+    ];
+}
 ```
 
 #### Admin Page Registration Process
