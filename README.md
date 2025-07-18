@@ -693,24 +693,6 @@ protected function get_database_upgrade_callbacks(): array {
 ```
 
 
-## Code Quality
-
-### Coding Standards
-
-The project follows the WordPress Coding Standards. You can check your code against these standards using PHP_CodeSniffer:
-
-```bash
-vendor/bin/phpcs src --standard=WordPress
-```
-
-### Static Analysis
-
-The project uses PHPStan for static analysis. You can run PHPStan to check for potential issues:
-
-```bash
-vendor/bin/phpstan analyse src
-```
-
 ## License
 
 This project is licensed under the GPL v2 or later.
