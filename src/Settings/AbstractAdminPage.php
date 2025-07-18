@@ -5,7 +5,7 @@ namespace WebMoves\PluginBase\Settings;
 use WebMoves\PluginBase\Concerns\Components\ComponentRegistration;
 use WebMoves\PluginBase\Concerns\Components\HasAdminMenu;
 use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
-use WebMoves\PluginBase\Contracts\PluginCoreInterface;
+
 
 abstract class AbstractAdminPage implements ComponentInterface  {
 
@@ -69,7 +69,6 @@ abstract class AbstractAdminPage implements ComponentInterface  {
 	}
 
 
-
 	public function get_menu_slug(): string
 	{
 		return $this->page_slug;
@@ -82,8 +81,6 @@ abstract class AbstractAdminPage implements ComponentInterface  {
 	}
 
 
-
-
 	public function get_capability(): string
 	{
 		return $this->capability;
@@ -93,8 +90,6 @@ abstract class AbstractAdminPage implements ComponentInterface  {
 	{
 		$this->capability = $capability;
 	}
-
-
 
 	public function get_menu_icon(): ?string
 	{

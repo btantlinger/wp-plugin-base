@@ -9,7 +9,6 @@ use WebMoves\PluginBase\Concerns\Components\HasAssets;
 use WebMoves\PluginBase\Concerns\Components\HasCli;
 use WebMoves\PluginBase\Concerns\Components\HasFilter;
 use WebMoves\PluginBase\Concerns\Components\HasSchedule;
-use WebMoves\PluginBase\Concerns\Components\HasSettings;
 use WebMoves\PluginBase\Concerns\Components\HasShortcode;
 
 class ComponentFactory
@@ -163,27 +162,6 @@ class ComponentFactory
 			protected function get_shortcode_tag(): string {
 				return $this->tag;
 			}
-		};
-	}
-
-	/**
-	 * Create a settings component
-	 */
-	public static function settings(string $group, array $fields, string $page): object
-	{
-		return new class($group, $fields, $page) extends AbstractComponent {
-			use ComponentRegistration;
-			use HasSettings;
-
-			public function __construct(
-				private string $group,
-				private array $fields,
-				private string $page
-			) {}
-
-			protected function get_settings_group(): string { return $this->group; }
-			protected function get_settings_fields(): array { return $this->fields; }
-			protected function get_settings_page(): string { return $this->page; }
 		};
 	}
 }

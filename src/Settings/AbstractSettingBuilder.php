@@ -5,8 +5,9 @@ namespace WebMoves\PluginBase\Settings;
 use Psr\Log\LoggerInterface;
 use WebMoves\PluginBase\Contracts\PluginCoreInterface;
 use WebMoves\PluginBase\Contracts\Settings\SettingsProvider;
+use WebMoves\PluginBase\Contracts\Settings\SettingsBuilderInterface;
 
-abstract class AbstractSettingBuilder implements \WebMoves\PluginBase\Contracts\Settings\SettingsBuilderInterface
+abstract class AbstractSettingBuilder implements SettingsBuilderInterface
 {
 	private string $settingsGroup;
 	private string $page;
@@ -17,14 +18,22 @@ abstract class AbstractSettingBuilder implements \WebMoves\PluginBase\Contracts\
 
 	protected FlashData $flash;
 
+	protected $core;
 
-	public function __construct(PluginCoreInterface $core, string $settingsGroup, string $page)
+
+	public function __construct(PluginCoreInterface $core, string $settingsGroup, string $page, array $settings_providers = [],)
 	{
 		$this->settingsGroup = $settingsGroup;
 		$this->page = $page;
 		$this->text_domain = $core->get_text_domain();
 		$this->logger = $core->get_logger('app');
 		$this->flash = new FlashData($page);
+		$this->providers = $settings_providers;
+		$this->core = $core;
+	}
+
+	public function get_plugin_core(): PluginCoreInterface {
+		return $this->core;
 	}
 
 

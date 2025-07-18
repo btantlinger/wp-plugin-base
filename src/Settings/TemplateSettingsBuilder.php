@@ -10,8 +10,8 @@ class TemplateSettingsBuilder extends AbstractSettingBuilder
 	private TemplateRendererInterface $template_renderer;
 
 
-	public function __construct(PluginCoreInterface $core, string $settingsGroup, string $page, TemplateRendererInterface $renderer) {
-		parent::__construct($core, $settingsGroup, $page);
+	public function __construct(PluginCoreInterface $core, string $settingsGroup, string $page, TemplateRendererInterface $renderer, array $settings_providers = []) {
+		parent::__construct($core, $settingsGroup, $page, $settings_providers);
 		$this->template_renderer = $renderer;
 	}
 
@@ -29,7 +29,6 @@ class TemplateSettingsBuilder extends AbstractSettingBuilder
 	public function render_settings_field( array $args ): void {
 
 		$args['value'] = $this->get_field_display_value($args['provider'], $args['field_key'], $args['field']['default'] ?? '');
-
 		$tmpl = $this->get_field_template_name($args['field']['type']);
 		$this->template_renderer->display($tmpl, $args);
 	}

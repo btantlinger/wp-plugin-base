@@ -3,17 +3,10 @@
 namespace WebMoves\PluginBase\Contracts\Settings;
 
 use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
+use WebMoves\PluginBase\Contracts\PluginCoreInterface;
 
 interface SettingsBuilderInterface extends ComponentInterface
 {
-    /**
-     * Add a settings provider to the builder
-     *
-     * @param SettingsProvider $provider
-     * @return void
-     */
-    public function add_provider(SettingsProvider $provider): void;
-
 
     /**
      * Render a single settings field
@@ -38,7 +31,6 @@ interface SettingsBuilderInterface extends ComponentInterface
 
 	
 	public function get_settings_page();
-	
 
 
 	/**
@@ -47,4 +39,6 @@ interface SettingsBuilderInterface extends ComponentInterface
 	 * @return SettingsProvider[] Array of registered settings providers
 	 */
 	public function get_providers(): array;
+
+	public function get_plugin_core(): PluginCoreInterface;
 }

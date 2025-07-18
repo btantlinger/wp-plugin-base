@@ -3,8 +3,9 @@
 namespace WebMoves\PluginBase;
 
 use WebMoves\PluginBase\Contracts\PluginCoreInterface;
+use WebMoves\PluginBase\Contracts\DatabaseManagerInterface;
 
-class DatabaseManager implements \WebMoves\PluginBase\Contracts\DatabaseManagerInterface
+class DatabaseManager implements DatabaseManagerInterface
 {
     private string $version;
     private string $version_option_name;

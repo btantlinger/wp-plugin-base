@@ -19,12 +19,10 @@ class SettingsPage extends AbstractAdminPage
 
 	protected function before_register(): void
 	{
-
-/*		if(!$this->core->is_registered($this->builder)) {
-			$this->core->register_component($this->builder);
-		}*/
-
-		$this->builder->register();
+		$core = $this->builder->get_plugin_core();
+		if(!$core->is_registered($this->builder)) {
+			$core->register_component($this->builder);
+		}
 	}
 
 	protected function render_admin_page(): void

@@ -56,8 +56,6 @@ abstract class AbstractPlugin {
 		$this->initialize();
 	}
 
-
-
 	/**
 	 * Initialize database management
 	 * Note: maybe_upgrade() is called later in PluginCore::on_plugins_loaded()

@@ -8,20 +8,18 @@ use WebMoves\PluginBase\Settings\SettingsPage;
 
 class TestSettingsPage extends SettingsPage {
 
+	public function __construct(PluginCoreInterface $core, string $pageTitle, string $menuTitle, ?string $parent_slug=null) {
 
+		$builder = new BasicSettingsBuilder(
+			$core,
+			"foo_plugin_settings",
+			"foo-plugin-settings",
+			[
+				new DemoSettingsProvider('foo-demo'),
+				new ApiSettingsProvider('foo-api')
+			]
+		);
 
-	public function __construct(PluginCoreInterface $core, ?string $parent_slug=null) {
-
-
-		// Use EXACTLY the same configuration as init_settings()
-		$builder = new BasicSettingsBuilder($core, "foo_plugin_settings", "foo-plugin-settings");
-    	$builder->add_provider(new DemoSettingsProvider('foo-demo'));
-		$builder->add_provider(new ApiSettingsProvider('foo-api'));
-
-
-		parent::__construct($builder, "Test Plugin Settings", "Test Plugin", $parent_slug);
-
-
-
+		parent::__construct($builder, $pageTitle, $menuTitle, $parent_slug);
 	}
 }
