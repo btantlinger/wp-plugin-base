@@ -1,7 +1,7 @@
 {
     "name": "webmoves/plugin-base",
-    "description": "A simple base plugin framework for wordpress",
-    "type": "wordpress-plugin",
+    "description": "A simple base plugin base for wordpress",
+    "type": "library",
     "authors": [
         {
             "name": "Bob Tantlinger",
@@ -9,7 +9,7 @@
         }
     ],
     "require": {
-        "php": ">=8.0",
+        "php": ">=8.3",
         "monolog/monolog": "^3.0",
         "wp-cli/wp-cli-bundle": "^2.12",
         "php-di/php-di": "^7.0"
