@@ -1,6 +1,7 @@
 {
     "name": "webmoves/plugin-base",
     "description": "A simple base plugin base for wordpress",
+    "license": "GPL-2.0-or-later",
     "type": "library",
     "authors": [
         {
