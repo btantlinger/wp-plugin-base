@@ -1,5 +1,12 @@
 # WordPress Plugin Base
 
+>
+> **⚠️Please Note: This library is currently in early development and is NOT suitable for production use.**
+>
+> **It is not advised to deploy plugins built with this library to production WordPress sites until a stable version is released.**
+
+
+
 A modern WordPress plugin base that provides a solid foundation for creating well-structured, maintainable WordPress plugins. This library uses a service-based architecture with dependency injection, organized hook management, and clean separation of concerns.
 
 ## Overview
