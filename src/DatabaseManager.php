@@ -2,6 +2,7 @@
 
 namespace WebMoves\PluginBase;
 
+use Psr\Log\LoggerInterface;
 use WebMoves\PluginBase\Contracts\PluginCoreInterface;
 use WebMoves\PluginBase\Contracts\DatabaseManagerInterface;
 
@@ -13,12 +14,15 @@ class DatabaseManager implements DatabaseManagerInterface
     private array $tables = [];
     private array $version_callbacks = [];
 
+	protected LoggerInterface $logger;
+
     public function __construct(PluginCoreInterface $core)
     {
 		$db_ver = $core->get_database_version();
         $this->version = $db_ver ? $db_ver : '1.0.0';
         $this->plugin_name = $core->get_name();
         $this->version_option_name = $this->generate_version_option_name($this->plugin_name);
+		$this->logger = $core->get_logger('database');
     }
 
     /**
@@ -54,6 +58,7 @@ class DatabaseManager implements DatabaseManagerInterface
         foreach ($this->tables as $table_name => $schema) {
             $table_name = $wpdb->prefix . $table_name;
             $sql = str_replace('{table_name}', $table_name, $schema);
+            $sql = str_replace('{charset_collate}', $wpdb->get_charset_collate(), $sql);
             $sql_queries[] = $sql;
         }
 
@@ -63,7 +68,7 @@ class DatabaseManager implements DatabaseManagerInterface
         // Log the results for debugging
         if (defined('WP_DEBUG') && WP_DEBUG) {
             foreach ($results as $result) {
-                error_log("Database update: " . $result);
+                $this->logger->info("Database update: " . $result);
             }
         }
     }
@@ -101,10 +106,10 @@ class DatabaseManager implements DatabaseManagerInterface
             do_action($this->plugin_name . '_database_upgraded', $old_version, $this->version);
 
             // Log successful upgrade
-            error_log("Database upgraded for {$this->plugin_name} from {$old_version} to {$this->version}");
+            $this->logger->info("Database upgraded for {$this->plugin_name} from {$old_version} to {$this->version}");
 
         } catch (\Exception $e) {
-            error_log("Database upgrade failed for {$this->plugin_name}: " . $e->getMessage());
+            $this->logger->error("Database upgrade failed for {$this->plugin_name}: " . $e->getMessage());
             throw $e;
         }
     }
@@ -129,9 +134,9 @@ class DatabaseManager implements DatabaseManagerInterface
                 
                 try {
                     $callback($old_version, $this->version);
-                    error_log("Version callback {$callback_version} executed for {$this->plugin_name}");
-                } catch (Exception $e) {
-                    error_log("Version callback {$callback_version} failed for {$this->plugin_name}: " . $e->getMessage());
+                    $this->logger->notice("Version callback {$callback_version} executed for {$this->plugin_name}");
+                } catch (\Exception $e) {
+                    $this->logger->error("Version callback {$callback_version} failed for {$this->plugin_name}: " . $e->getMessage());
                     throw $e;
                 }
             }
