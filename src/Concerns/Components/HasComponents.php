@@ -31,7 +31,6 @@ trait HasComponents
 		}
 	}
 
-
 	/**
 	 * Get services to register
 	 *

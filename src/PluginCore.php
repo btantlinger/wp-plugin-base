@@ -6,19 +6,23 @@ use DI\Container;
 use DI\ContainerBuilder;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use WebMoves\PluginBase\Contracts\DatabaseManagerInterface;
+use WebMoves\PluginBase\Configuration\ConfigurationManager;
 use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
 use WebMoves\PluginBase\Contracts\Components\ComponentManagerInterface;
+use WebMoves\PluginBase\Contracts\Configuration\ConfigurationManagerInterface;
+use WebMoves\PluginBase\Contracts\DatabaseManagerInterface;
 use WebMoves\PluginBase\Contracts\PluginCoreInterface;
+use WebMoves\PluginBase\Enums\Lifecycle;
 use WebMoves\PluginBase\Logging\LoggerFactory;
-
 
 class PluginCore implements PluginCoreInterface
 {
     private Container $container;
-    private string $plugin_file;
+	private ConfigurationManagerInterface $config;
+
+	private string $plugin_file;
     private string $plugin_version;
-	private ?string $database_version;
+    private ?string $database_version;
     private string $plugin_name;
     private bool $initialized = false;
     /**
@@ -39,12 +43,13 @@ class PluginCore implements PluginCoreInterface
     {
         $this->plugin_file = $plugin_file;
         $this->plugin_version = $plugin_version;
-		$this->database_version = $database_version;
+        $this->database_version = $database_version;
         $this->plugin_name = $this->extract_plugin_name($plugin_file);
         $this->text_domain = $text_domain ?? $this->derive_text_domain();
-        
-        $this->setup_container();
 
+	    $this->config = new ConfigurationManager($this);
+
+	    $this->setup_container();
     }
 
     /**
@@ -78,24 +83,142 @@ class PluginCore implements PluginCoreInterface
             return;
         }
 
-	    // Load textdomain early for translations
-	    add_action('init', [$this, 'load_textdomain']);
+        // Load textdomain early for translations
+        add_action('init', [$this, 'load_textdomain']);
 
-        // Register core WordPress hooks
-        add_action('plugins_loaded', [$this, 'on_plugins_loaded']);
-        add_action('init', [$this, 'on_init']);
-        add_action('admin_init', [$this, 'on_admin_init']);
+        // Register lifecycle hooks dynamically
+	    $this->setup_plugin_management_hooks();
+        $this->setup_lifecycle_hooks();
 
         // Register activation/deactivation hooks
-        register_activation_hook($this->plugin_file, [$this, 'on_activation']);
-        register_deactivation_hook($this->plugin_file, [$this, 'on_deactivation']);
+        register_activation_hook($this->plugin_file, function() {
+            $this->on_lifecycle(Lifecycle::ACTIVATE);
+        });
+        register_deactivation_hook($this->plugin_file, function() {
+            $this->on_lifecycle(Lifecycle::DEACTIVATE);
+        });
 
         $this->initialized = true;
     }
 
-	public function get_plugin_base_dir(): string {
-		return dirname($this->plugin_file);
+    /**
+     * Setup WordPress lifecycle hooks dynamically using enum configuration
+     */
+    private function setup_lifecycle_hooks(): void
+    {
+        // Register hooks for all runtime lifecycles
+        foreach (Lifecycle::getRuntimeLifecycles() as $lifecycle) {
+            $hookName = $lifecycle->getHookName();
+            $priority = $lifecycle->getHookPriority();
+            
+            // Use closure to capture the lifecycle enum
+            add_action($hookName, function() use ($lifecycle) {
+                $this->on_lifecycle($lifecycle);
+            }, $priority);
+        }
+
+        // Special handling for plugins_loaded (both bootstrap and database handling)
+        add_action('plugins_loaded', [$this, 'on_plugins_loaded'], 10);
+    }
+
+
+	/**
+	 * Setup plugin management hooks (install, activate, deactivate, uninstall)
+	 */
+	private function setup_plugin_management_hooks(): void
+	{
+		// Plugin activation hook
+		register_activation_hook($this->plugin_file, function() {
+			// Handle install lifecycle on first activation
+			if (!get_option($this->get_installation_option_key(), false)) {
+				$this->on_lifecycle(Lifecycle::INSTALL);
+				add_option($this->get_installation_option_key(), true);
+			}
+
+			// Always handle activation
+			$this->on_lifecycle(Lifecycle::ACTIVATE);
+		});
+
+		// Plugin deactivation hook
+		register_deactivation_hook($this->plugin_file, function() {
+			$this->on_lifecycle(Lifecycle::DEACTIVATE);
+		});
+
+		// Plugin uninstall hook
+		register_uninstall_hook($this->plugin_file, [self::class, 'handle_uninstall']);
 	}
+
+	/**
+	 * Static method to handle uninstall (required by WordPress)
+	 * This creates a new instance to handle the uninstall lifecycle
+	 */
+	public static function handle_uninstall(): void
+	{
+		// Get plugin info from the calling file
+		$plugin_file = WP_UNINSTALL_PLUGIN ? WP_UNINSTALL_PLUGIN : '';
+		if (empty($plugin_file)) {
+			return;
+		}
+
+		// We need to recreate the plugin instance for uninstall
+		// This is a limitation of WordPress uninstall hooks - they run in isolation
+		try {
+			// Try to get plugin data to recreate instance
+			if (!function_exists('get_plugin_data')) {
+				require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			}
+
+			$plugin_data = get_plugin_data($plugin_file);
+			$version = $plugin_data['Version'] ?? '1.0.0';
+			$text_domain = $plugin_data['TextDomain'] ?? null;
+
+			// Create temporary instance for uninstall
+			$instance = new self($plugin_file, $version, $text_domain);
+			$instance->on_lifecycle(Lifecycle::UNINSTALL);
+
+			// Clean up installation marker
+			delete_option($instance->get_installation_option_key());
+
+		} catch (\Exception $e) {
+			// Log error if possible, but don't break uninstall
+			error_log("Plugin uninstall error: " . $e->getMessage());
+		}
+	}
+
+
+	/**
+	 * Get the option key used to track plugin installation
+	 */
+	private function get_installation_option_key(): string
+	{
+		return sanitize_key($this->get_name() . '_installed');
+	}
+
+
+
+	/**
+     * Universal lifecycle handler
+     */
+    public function on_lifecycle(Lifecycle $lifecycle): void
+    {
+        $this->get_logger()->info(
+            $this->get_name() . ' on_' . $lifecycle->value, 
+            ['version' => $this->get_version(), 'lifecycle' => $lifecycle->value]
+        );
+
+
+        // Initialize components for this lifecycle
+        $this->initialize_components_for_lifecycle($lifecycle);
+
+        // Fire custom hook for extensibility
+        $hook = $this->get_hook_prefix() . '_' . $lifecycle->value;
+        do_action($hook, $this, $lifecycle);
+    }
+
+    public function get_plugin_base_dir(): string
+    {
+        return dirname($this->plugin_file);
+    }
 
     /**
      * Setup the DI container
@@ -105,86 +228,72 @@ class PluginCore implements PluginCoreInterface
     private function setup_container(): void
     {
         $builder = new ContainerBuilder();
-	    $builder->useAutowiring(false);
-		$builder->useAttributes(false);
+        $builder->useAutowiring(false);
+        $builder->useAttributes(false);
 
-	    // 1. Add plugin-specific definitions FIRST (foundation values)
+		// Core dependencies required for the plugin to function
         $builder->addDefinitions([
             'plugin.file' => $this->plugin_file,
             'plugin.version' => $this->plugin_version,
-			'plugin.database_version' => $this->database_version,
+            'plugin.database_version' => $this->database_version,
             'plugin.name' => $this->plugin_name,
             'plugin.text_domain' => $this->text_domain,
             'plugin.path' => plugin_dir_path($this->plugin_file),
             'plugin.url' => plugin_dir_url($this->plugin_file),
             // Add PluginCore instance to the container definitions
             PluginCoreInterface::class => $this,
-            PluginCore::class => $this,
+            ConfigurationManagerInterface::class => $this->config,
         ]);
 
-        // 2. Load core framework dependencies
-        $core_dependencies_file = rtrim(dirname(__FILE__, 2), '/') . '/config/core-dependencies.php';
-        if (file_exists($core_dependencies_file)) {
-            $core_dependencies = require $core_dependencies_file;
-            $builder->addDefinitions($core_dependencies);
-        } else {
-            throw new \Exception('Plugin core dependencies file not found');
-        }
+	    $services = $this->config->getServices();
+	    if (is_array($services)) {
+			$builder->addDefinitions($services);
+	    }
 
-        // Build the container with all definitions
+		$components = $this->config->getComponents();
+		if (is_array($components)) {
+			$builder->addDefinitions($components);
+		}
         $this->container = $builder->build();
 
-        // 3. Load plugin config-based dependencies AFTER container is built
-        $this->load_plugin_config_dependencies();
+		foreach($components as $id => $component) {
+			$component = $this->container->get($id);
+			$this->register_component($component);;
+		}
     }
 
-	private function initialize_components(): void
+	/**
+	 * Get the configuration manager
+	 */
+	public function get_config(): ConfigurationManagerInterface
 	{
-		$handler_manager = $this->get(ComponentManagerInterface::class);
-		$handler_manager->initialize_components();
+		return $this->config;
 	}
 
-    private function load_plugin_config_dependencies(): void
+	/**
+	 * Get configuration value using dot notation
+	 */
+	public function config(string $key, $default = null)
+	{
+		return $this->config->get($key, $default);
+	}
+
+
+
+	/**
+     * Initialize components for a specific lifecycle
+     */
+    private function initialize_components_for_lifecycle(Lifecycle $lifecycle): void
     {
-        $config_dir = $this->get_plugin_base_dir() . '/config';
-        
-        if (!is_dir($config_dir)) {
-            return;
-        }
-        
-        // Load specific config files in order
-        $config_files = [
-            'services.php',
-            'components.php',
-            'integrations.php', 
-            'dependencies.php', // Keep backward compatibility
-        ];
-        
-        foreach ($config_files as $file) {
-            $path = $config_dir . '/' . $file;
-            if (file_exists($path)) {
-                $definitions = require $path;
-                if (is_array($definitions)) {
-                    foreach ($definitions as $id => $definition) {
-                        $this->set($id, $definition);
-                    }
-                }
-            }
-        }
-        
-        // Load bundle files
-        $bundles_dir = $config_dir . '/bundles';
-        if (is_dir($bundles_dir)) {
-            foreach (glob($bundles_dir . '/*.php') as $bundle_file) {
-                $definitions = require $bundle_file;
-                if (is_array($definitions)) {
-                    foreach ($definitions as $id => $definition) {
-                        $this->set($id, $definition);
-                    }
-                }
-            }
-        }
+        /**
+         * @var $component_manager ComponentManagerInterface
+         */
+        $component_manager = $this->get(ComponentManagerInterface::class);
+        $component_manager->initialize_components_for_lifecycle($lifecycle);
     }
+
+
+
 
     /**
      * Register a service in the container
@@ -196,13 +305,11 @@ class PluginCore implements PluginCoreInterface
     public function set(string $id, mixed $value, bool $auto_register_components=true): void
     {
         $this->container->set($id, $value);
-		$object = $this->container->get($id);
-		if($auto_register_components && $object instanceof ComponentInterface) {
-			$this->register_component($object);
-		}
+        $object = $this->container->get($id);
+        if($auto_register_components && $object instanceof ComponentInterface) {
+            $this->register_component($object);
+        }
     }
-
-
 
     /**
      * Get a service from the container
@@ -212,11 +319,8 @@ class PluginCore implements PluginCoreInterface
      */
     public function get(string $id)
     {
-		return $this->container->get( $id );
+        return $this->container->get($id);
     }
-
-
-
 
     /**
      * Register a component
@@ -227,118 +331,64 @@ class PluginCore implements PluginCoreInterface
      */
     public function register_component(ComponentInterface $component): void
     {
-	    /**
-	     * @var $component_manager ComponentManagerInterface
-	     */
+        /**
+         * @var $component_manager ComponentManagerInterface
+         */
         $component_manager = $this->get(ComponentManagerInterface::class);
         $component_manager->register_component($component);
     }
 
-	/**
-	 * Check if the given component is registered.
-	 *
-	 * @param ComponentInterface $component The component to check.
-	 *
-	 * @return bool True if the component is registered, false otherwise.
-	 */
-	public function is_registered(ComponentInterface $component): bool
-	{
-		/**
-		 * @var $component_manager ComponentManagerInterface
-		 */
-		$component_manager = $this->get(ComponentManagerInterface::class);
-		return $component_manager->is_registered($component);
-	}
+    /**
+     * Check if the given component is registered.
+     *
+     * @param ComponentInterface $component The component to check.
+     *
+     * @return bool True if the component is registered, false otherwise.
+     */
+    public function is_registered(ComponentInterface $component): bool
+    {
+        /**
+         * @var $component_manager ComponentManagerInterface
+         */
+        $component_manager = $this->get(ComponentManagerInterface::class);
+        return $component_manager->is_registered($component);
+    }
 
-
-	/**
-     * Handle plugins_loaded action
+    /**
+     * Handle plugins_loaded action (for backward compatibility and database handling)
      *
      * @return void
      */
     public function on_plugins_loaded(): void
     {
-		$this->get_logger()->info( $this->get_name() . ' on_plugins_loaded', ['version' => $this->get_version()] );
+        $this->get_logger()->info($this->get_name() . ' on_plugins_loaded', ['version' => $this->get_version()]);
+        
+        // Handle database upgrades
         $database_manager = $this->get(DatabaseManagerInterface::class);
         $database_manager->maybe_upgrade();
-
-	    $this->initialize_components();
     }
 
-    /**
-     * Handle init action
-     *
-     * @return void
-     */
-    public function on_init(): void
+    public function get_hook_prefix(): string
     {
-        // Plugin initialization logic
-	    $this->get_logger()->info( $this->get_name() . ' on_init', ['version' => $this->get_version()] );
-	    $hook = $this->get_hook_prefix() . '_init';
-        do_action($hook, $this);
+        return sanitize_title_with_dashes($this->get_name());
     }
 
-    /**
-     * Handle admin_init action
-     *
-     * @return void
-     */
-    public function on_admin_init(): void
+    public function get_logger(?string $channel=null): LoggerInterface
     {
-        // Admin initialization logic
-	    $this->get_logger()->info( $this->get_name() . ' on_admin_init', ['version' => $this->get_version()] );
-	    $hook = $this->get_hook_prefix() . '_admin_init';
-        do_action($hook, $this);
+        $logger = null;
+        try {
+            if(empty($channel)) {
+                $channel = 'default';
+            }
+            $logger = $this->get_container()->get("logger.$channel");
+        } catch (\Exception $e) {
+        }
+
+        if(!$logger) {
+            $logger = LoggerFactory::createLogger($this->get_name(), $this->get_plugin_file(), $channel);
+        }
+        return $logger;
     }
-
-    /**
-     * Handle plugin activation
-     *
-     * @return void
-     */
-    public function on_activation(): void
-    {
-		$this->get_logger()->info( $this->get_name() . ' on_activation', ['version' => $this->get_version()] );
-        $database_manager = $this->get(DatabaseManagerInterface::class);
-        $database_manager->create_tables();
-		$hook = $this->get_hook_prefix() . '_activation';
-        do_action($hook, $this);
-    }
-
-    /**
-     * Handle plugin deactivation
-     *
-     * @return void
-     */
-    public function on_deactivation(): void
-    {
-		$this->get_logger()->info( $this->get_name() . ' on_deactivation', ['version' => $this->get_version()] );
-		$hook = $this->get_hook_prefix() . '_deactivation';
-        do_action($hook, $this);
-    }
-
-	public function get_hook_prefix(): string {
-		return sanitize_title_with_dashes($this->get_name());
-	}
-
-	public function get_logger(?string $channel=null): LoggerInterface
-	{
-		$logger = null;
-		try {
-			if(empty($channel)) {
-				$channel = 'default';
-			}
-     		$logger = $this->get_container()->get( "logger.$channel" );
-		} catch (\Exception $e) {
-		}
-
-		if(!$logger) {
-			$logger = LoggerFactory::createLogger($this->get_name(), $this->get_plugin_file(), $channel);
-		}
-		return $logger;
-	}
-
-
 
     /**
      * Get the container instance
@@ -350,11 +400,11 @@ class PluginCore implements PluginCoreInterface
         return $this->container;
     }
 
-
-	public function get_db(): \wpdb {
-		global $wpdb;
-		return $wpdb;
-	}
+    public function get_db(): \wpdb
+    {
+        global $wpdb;
+        return $wpdb;
+    }
 
     /**
      * Get plugin version
@@ -366,10 +416,10 @@ class PluginCore implements PluginCoreInterface
         return $this->plugin_version;
     }
 
-	public function get_database_version(): ?string
-	{
-		return $this->database_version;
-	}
+    public function get_database_version(): ?string
+    {
+        return $this->database_version;
+    }
 
     /**
      * Get plugin name

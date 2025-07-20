@@ -6,6 +6,7 @@ use DI\Container;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
+use WebMoves\PluginBase\Contracts\Configuration\ConfigurationManagerInterface;
 
 interface PluginCoreInterface
 {
@@ -34,6 +35,8 @@ interface PluginCoreInterface
 	public function get(string $id);
 
 	public function get_logger(?string $channel=null): LoggerInterface;
+
+	public function get_config(): ConfigurationManagerInterface;
 
 
 	public function is_registered(ComponentInterface $component): bool;
@@ -89,4 +92,6 @@ interface PluginCoreInterface
 	 * @return string
 	 */
 	public function get_plugin_file(): string;
+
+	public function get_text_domain(): string;
 }

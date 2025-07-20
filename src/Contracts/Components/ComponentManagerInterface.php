@@ -3,6 +3,8 @@
 namespace WebMoves\PluginBase\Contracts\Components;
 
 
+use WebMoves\PluginBase\Enums\Lifecycle;
+
 interface ComponentManagerInterface {
 	/**
 	 * Register a component
@@ -17,7 +19,21 @@ interface ComponentManagerInterface {
 	 *
 	 * @return void
 	 */
-	public function initialize_components(): void;
+	public function initialize_components_for_lifecycle(Lifecycle $lifecycle): void;
+
+
+	/**
+	 * Check if a specific lifecycle has been initialized
+	 */
+	public function is_lifecycle_initialized(Lifecycle $lifecycle): bool;
+
+
+	/**
+	 * @param Lifecycle $lifecycle
+	 *
+	 * @return array
+	 */
+	public function get_components_by_lifecycle(Lifecycle $lifecycle): array;
 
 	/**
 	 * Get all registered components

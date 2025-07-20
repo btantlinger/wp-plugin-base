@@ -6,6 +6,7 @@ use Psr\Log\LoggerInterface;
 use WebMoves\PluginBase\Contracts\PluginCoreInterface;
 use WebMoves\PluginBase\Contracts\Settings\SettingsProviderInterface;
 use WebMoves\PluginBase\Contracts\Settings\SettingsBuilderInterface;
+use WebMoves\PluginBase\Enums\Lifecycle;
 
 abstract class AbstractSettingBuilder implements SettingsBuilderInterface
 {
@@ -258,5 +259,9 @@ abstract class AbstractSettingBuilder implements SettingsBuilderInterface
 
 	public function can_register(): bool {
 		return is_admin() && current_user_can('manage_options');
+	}
+
+	public function register_on(): Lifecycle {
+		return Lifecycle::INIT;
 	}
 }

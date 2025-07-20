@@ -2,9 +2,14 @@
 
 namespace WebMoves\PluginBase\Contracts\Components;
 
+use WebMoves\PluginBase\Enums\Lifecycle;
+
 interface ComponentInterface
 {
-    /**
+	public function register_on(): Lifecycle;
+
+
+	/**
      * Register WordPress hooks for this component
      *
      * @return void

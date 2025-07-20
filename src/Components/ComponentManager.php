@@ -4,11 +4,12 @@ namespace WebMoves\PluginBase\Components;
 
 use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
 use WebMoves\PluginBase\Contracts\Components\ComponentManagerInterface;
+use WebMoves\PluginBase\Enums\Lifecycle;
 
 class ComponentManager implements ComponentManagerInterface
 {
 	private array $components = [];
-	private bool $initialized = false;
+	private array $initialized_lifecycles = [];
 
 	public function __construct()
 	{
@@ -23,31 +24,38 @@ class ComponentManager implements ComponentManagerInterface
 
 		$this->components[] = $component;
 
-		// If we're already initialized, register the component immediately
-		if ($this->initialized) {
+		// If this lifecycle has already been initialized, register the component immediately
+		$lifecycle = $component->register_on();
+		if (in_array($lifecycle, $this->initialized_lifecycles, true)) {
 			$this->register_single_component($component);
 		}
 	}
 
-	public function initialize_components(): void
+	/**
+	 * Initialize components for a specific lifecycle
+	 */
+	public function initialize_components_for_lifecycle(Lifecycle $lifecycle): void
 	{
-		if ($this->initialized) {
+		if (in_array($lifecycle, $this->initialized_lifecycles, true)) {
 			return;
 		}
 
-		// Sort components by priority initially
-		usort($this->components, function (ComponentInterface $a, ComponentInterface $b) {
+		// Get components for this specific lifecycle
+		$lifecycle_components = $this->get_components_for_lifecycle($lifecycle);
+
+		// Sort components by priority
+		usort($lifecycle_components, function (ComponentInterface $a, ComponentInterface $b) {
 			return $a->get_priority() <=> $b->get_priority();
 		});
 
 		// Process components until none are left unprocessed
 		$processed = [];
 
-		while (count($processed) < count($this->components)) {
-			$current_count = count($this->components);
+		while (count($processed) < count($lifecycle_components)) {
+			$current_count = count($lifecycle_components);
 
 			// Find unprocessed components
-			$unprocessed = array_filter($this->components, function($component) use ($processed) {
+			$unprocessed = array_filter($lifecycle_components, function($component) use ($processed) {
 				return !in_array($component, $processed, true);
 			});
 
@@ -57,17 +65,38 @@ class ComponentManager implements ComponentManagerInterface
 				$processed[] = $component;
 			}
 
-			// If new components were added, re-sort the entire array
-			if (count($this->components) > $current_count) {
-				usort($this->components, function (ComponentInterface $a, ComponentInterface $b) {
+			// If new components were added during registration, refresh the lifecycle components list
+			$new_lifecycle_components = $this->get_components_for_lifecycle($lifecycle);
+			if (count($new_lifecycle_components) > $current_count) {
+				$lifecycle_components = $new_lifecycle_components;
+				
+				// Re-sort with new components
+				usort($lifecycle_components, function (ComponentInterface $a, ComponentInterface $b) {
 					return $a->get_priority() <=> $b->get_priority();
 				});
 			}
 		}
 
-		$this->initialized = true;
+		$this->initialized_lifecycles[] = $lifecycle;
 	}
 
+	/**
+	 * Legacy method for backward compatibility - initializes INIT lifecycle components
+	 */
+	public function initialize_components(): void
+	{
+		$this->initialize_components_for_lifecycle(Lifecycle::INIT);
+	}
+
+	/**
+	 * Get components that should register on a specific lifecycle
+	 */
+	private function get_components_for_lifecycle(Lifecycle $lifecycle): array
+	{
+		return array_filter($this->components, function(ComponentInterface $component) use ($lifecycle) {
+			return $component->register_on() === $lifecycle;
+		});
+	}
 
 	private function register_single_component(ComponentInterface $component): void
 	{
@@ -81,6 +110,30 @@ class ComponentManager implements ComponentManagerInterface
 	public function get_components(): array
 	{
 		return $this->components;
+	}
+
+	/**
+	 * Get components for a specific lifecycle
+	 */
+	public function get_components_by_lifecycle(Lifecycle $lifecycle): array
+	{
+		return $this->get_components_for_lifecycle($lifecycle);
+	}
+
+	/**
+	 * Get all initialized lifecycles
+	 */
+	public function get_initialized_lifecycles(): array
+	{
+		return $this->initialized_lifecycles;
+	}
+
+	/**
+	 * Check if a specific lifecycle has been initialized
+	 */
+	public function is_lifecycle_initialized(Lifecycle $lifecycle): bool
+	{
+		return in_array($lifecycle, $this->initialized_lifecycles, true);
 	}
 
 	public function is_registered(ComponentInterface $component): bool
