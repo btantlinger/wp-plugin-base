@@ -3,33 +3,165 @@
 namespace WebMoves\PluginBase;
 
 use Psr\Log\LoggerInterface;
+use WebMoves\PluginBase\Contracts\Configuration\ConfigurationManagerInterface;
 use WebMoves\PluginBase\Contracts\PluginCoreInterface;
 use WebMoves\PluginBase\Contracts\DatabaseManagerInterface;
 
+/**
+ * Database Manager
+ * 
+ * Manages database operations including table creation, version tracking, and upgrades
+ * for WordPress plugins. Automatically loads table schemas from configuration and 
+ * provides WordPress action hooks for custom upgrade logic.
+ * 
+ * ## WordPress Actions Fired
+ * 
+ * During database upgrades, the following WordPress actions are fired in sequence:
+ * 
+ * ### 1. Pre-Upgrade Action
+ * **Hook:** `{hook_prefix}_database_upgrade_start`
+ * **Parameters:** `$old_version`, `$new_version`, `$core`
+ * **When:** Before any upgrade operations begin
+ * **Use case:** Backup data, prepare environment, validation
+ * 
+ * ### 2. General Upgrade Action
+ * **Hook:** `{hook_prefix}_database_upgrade`
+ * **Parameters:** `$old_version`, `$new_version`, `$core`
+ * **When:** After tables are created/updated, before version-specific actions
+ * **Use case:** General upgrade logic, data migrations
+ * 
+ * ### 3. Version-Specific Actions
+ * **Hook:** `{hook_prefix}_database_upgrade_to_{sanitized_version}`
+ * **Parameters:** `$old_version`, `$new_version`, `$core`
+ * **When:** For each version being upgraded to
+ * **Version format:** Dots replaced with underscores (e.g., "1.2.0" becomes "1_2_0")
+ * **Use case:** Version-specific database changes, data transformations
+ * 
+ * ### 4. Post-Upgrade Action (Success)
+ * **Hook:** `{hook_prefix}_database_upgrade_complete`
+ * **Parameters:** `$old_version`, `$new_version`, `$core`
+ * **When:** After successful upgrade completion
+ * **Use case:** Cleanup, notifications, post-upgrade tasks
+ * 
+ * ### 5. Error Action (Failure)
+ * **Hook:** `{hook_prefix}_database_upgrade_failed`
+ * **Parameters:** `$old_version`, `$new_version`, `$exception`, `$core`
+ * **When:** When an upgrade fails with an exception
+ * **Use case:** Error handling, rollback, notifications
+ * 
+ * ## Usage Examples
+ * 
+ * ```php
+ * // General upgrade hook
+ * add_action('my_plugin_database_upgrade', function($old_version, $new_version, $core) {
+ *     // Custom upgrade logic here
+ *     error_log("Upgrading from {$old_version} to {$new_version}");
+ * });
+ * 
+ * // Version-specific upgrade (e.g., to version 1.2.0)
+ * add_action('my_plugin_database_upgrade_to_1_2_0', function($old_version, $new_version, $core) {
+ *     // Specific logic for version 1.2.0
+ *     // e.g., migrate data, add new columns, etc.
+ * });
+ * 
+ * // Pre-upgrade preparation
+ * add_action('my_plugin_database_upgrade_start', function($old_version, $new_version, $core) {
+ *     // Backup data before upgrade
+ *     do_backup();
+ * });
+ * 
+ * // Handle upgrade failures
+ * add_action('my_plugin_database_upgrade_failed', function($old_version, $new_version, $exception, $core) {
+ *     error_log('Database upgrade failed: ' . $exception->getMessage());
+ *     // Send admin notification, etc.
+ * });
+ * ```
+ * 
+ * ## Configuration
+ * 
+ * Tables are loaded from configuration at: `database.tables`
+ * Database version is read from: `database.version`
+ * 
+ * @package WebMoves\PluginBase
+ * @since 1.0.0
+ */
 class DatabaseManager implements DatabaseManagerInterface
 {
+    /**
+     * Current database version from configuration
+     */
     private string $version;
+
+    /**
+     * WordPress option name for storing database version
+     */
     private string $version_option_name;
+
+    /**
+     * Plugin name
+     */
     private string $plugin_name;
+
+    /**
+     * Hook prefix for WordPress actions (from PluginCore::get_hook_prefix())
+     */
+    private string $hook_prefix;
+
+    /**
+     * Registered table schemas
+     * @var array<string, array{schema: string, metadata: array}>
+     */
     private array $tables = [];
-    private array $version_callbacks = [];
     
+    /**
+     * Logger instance for database operations
+     */
     protected LoggerInterface $logger;
+
+    /**
+     * Plugin core instance
+     */
+    protected PluginCoreInterface $core;
     
-    // Cache for database version check to avoid repeated queries
+    /**
+     * Cache for database version check to avoid repeated queries
+     */
     private static ?bool $is_current_cached = null;
 
-    public function __construct(PluginCoreInterface $core)
+
+
+    /**
+     * Initialize the database manager
+     * 
+     * Loads database version and tables from configuration, sets up logging,
+     * and registers all configured tables automatically.
+     *
+     * @param PluginCoreInterface $core Plugin core instance
+     * @param ConfigurationManagerInterface $config Configuration manager
+     */
+    public function __construct(PluginCoreInterface $core, ConfigurationManagerInterface $config)
     {
-        $db_ver = $core->get_database_version();
-        $this->version = $db_ver ? $db_ver : '1.0.0';
-        $this->plugin_name = $core->get_name();
+        $this->core = $core;
+
+        $this->version = $config->get('database.version', '1.0.0');
+        $this->plugin_name = $core->get_plugin_name();
+        $this->hook_prefix = $core->get_hook_prefix();
         $this->version_option_name = $this->generate_version_option_name($this->plugin_name);
         $this->logger = $core->get_logger('database');
+		
+		$tables = $config->get('database.tables', []);
+		
+		foreach ($tables as $table_name => $table_data) {
+			$this->register_table($table_name, $table_data);
+		}	
     }
 
     /**
      * Register a table schema with optional metadata
+     * 
+     * @param string $table_name Table name (without WordPress prefix)
+     * @param string $schema SQL CREATE TABLE statement with placeholders
+     * @param array $metadata Optional metadata for the table
      */
     public function register_table(string $table_name, string $schema, array $metadata = []): void
     {
@@ -44,15 +176,11 @@ class DatabaseManager implements DatabaseManagerInterface
     }
 
     /**
-     * Register a callback for a specific version upgrade
-     */
-    public function register_version_callback(string $version, callable $callback): void
-    {
-        $this->version_callbacks[$version] = $callback;
-    }
-
-    /**
      * Create/update all registered tables using dbDelta
+     * 
+     * Processes all registered tables and uses WordPress dbDelta function
+     * to create or update table schemas. Handles placeholder replacement
+     * for {table_name} and {charset_collate}.
      */
     public function create_tables(): void
     {
@@ -83,7 +211,6 @@ class DatabaseManager implements DatabaseManagerInterface
         }
 
         // Run dbDelta with all table schemas
-        // Note: dbDelta is already optimized - it only makes necessary changes
         $results = dbDelta($sql_queries);
 
         // Log the results for debugging
@@ -101,6 +228,8 @@ class DatabaseManager implements DatabaseManagerInterface
 
     /**
      * Create/update specific tables only
+     * 
+     * @param array $table_names Array of table names to process
      */
     public function create_specific_tables(array $table_names): void
     {
@@ -144,14 +273,15 @@ class DatabaseManager implements DatabaseManagerInterface
 
     /**
      * Check if database needs upgrade and run it (lightweight check)
-     * This should primarily be called during activation, but also has
-     * a safety net for edge cases
+     * 
+     * This should primarily be called during runtime checks, but also has
+     * a safety net for edge cases. Uses cached version check to avoid
+     * repeated database queries.
      */
     public function maybe_upgrade(): void
     {
-        $installed_version = get_option($this->version_option_name);
-
-        if ($installed_version !== $this->version) {
+        if (! $this->is_database_current()) {
+			$installed_version = get_option($this->version_option_name);
             $this->logger->info("Database upgrade needed during maybe_upgrade", [
                 'from' => $installed_version ?: 'none',
                 'to' => $this->version
@@ -162,7 +292,9 @@ class DatabaseManager implements DatabaseManagerInterface
 
     /**
      * Force database upgrade check - used during activation
-     * This is more explicit and always checks regardless of caching
+     * 
+     * This is more explicit and always checks regardless of caching.
+     * Should be called during plugin activation to ensure database is current.
      */
     public function check_and_upgrade(): void
     {
@@ -190,7 +322,10 @@ class DatabaseManager implements DatabaseManagerInterface
 
     /**
      * Get a cached database version check to avoid repeated queries
-     * Used for runtime checks that shouldn't hit the database every time
+     * 
+     * Used for runtime checks that shouldn't hit the database every time.
+     * 
+     * @return bool True if database version is current
      */
     public function is_database_current(): bool
     {
@@ -210,8 +345,18 @@ class DatabaseManager implements DatabaseManagerInterface
 
     /**
      * Upgrade database from old version to current version
+     * 
+     * **WordPress Actions Fired (in order):**
+     * 1. `{hook_prefix}_database_upgrade_start` - Before upgrade begins
+     * 2. `{hook_prefix}_database_upgrade` - General upgrade action
+     * 3. `{hook_prefix}_database_upgrade_to_{version}` - Version-specific actions
+     * 4. `{hook_prefix}_database_upgrade_complete` - After successful completion
+     * 5. `{hook_prefix}_database_upgrade_failed` - On failure (with exception)
+     * 
+     * @param string|null $old_version Previous database version
+     * @throws \Exception If upgrade fails
      */
-    private function upgrade_database($old_version): void
+    private function upgrade_database(?string $old_version): void
     {
         $start_time = microtime(true);
         
@@ -222,12 +367,15 @@ class DatabaseManager implements DatabaseManagerInterface
                 'plugin' => $this->plugin_name
             ]);
 
+            // Fire pre-upgrade action
+            do_action($this->hook_prefix . '_database_upgrade_start', $old_version, $this->version, $this->core);
+
             // Always run dbDelta to ensure tables are up to date
             $this->create_tables();
 
-            // Run version-specific callbacks
+            // Fire version-specific upgrade actions
             if ($old_version) {
-                $this->run_version_upgrades($old_version);
+                $this->fire_version_upgrade_actions($old_version);
             }
 
             // Update version after successful upgrade
@@ -236,12 +384,11 @@ class DatabaseManager implements DatabaseManagerInterface
             // Clear the cached version check since we just upgraded
             self::$is_current_cached = true;
 
-            // Fire action for external integrations
-            do_action($this->plugin_name . '_database_upgraded', $old_version, $this->version);
+            // Fire post-upgrade action for external integrations
+            do_action($this->hook_prefix . '_database_upgrade_complete', $old_version, $this->version, $this->core);
 
             $duration = microtime(true) - $start_time;
             
-            // Log successful upgrade
             $this->logger->info("Database upgrade completed successfully", [
                 'from' => $old_version ?: 'none',
                 'to' => $this->version,
@@ -263,64 +410,67 @@ class DatabaseManager implements DatabaseManagerInterface
                 'duration_ms' => round($duration * 1000, 2)
             ]);
             
+            // Fire error action
+            do_action($this->hook_prefix . '_database_upgrade_failed', $old_version, $this->version, $e, $this->core);
+            
             throw $e;
         }
     }
 
     /**
-     * Run version-specific upgrade callbacks
+     * Fire version-specific upgrade actions using WordPress hooks
+     * 
+     * **Actions fired:**
+     * - `{hook_prefix}_database_upgrade` - General upgrade action
+     * - `{hook_prefix}_database_upgrade_to_{sanitized_version}` - For each version
+     * 
+     * @param string $old_version Previous database version
      */
-    private function run_version_upgrades(string $old_version): void
+    private function fire_version_upgrade_actions(string $old_version): void
     {
-        if (empty($this->version_callbacks)) {
-            $this->logger->debug("No version callbacks registered");
-            return;
-        }
-
-        // Sort versions to ensure proper order
-        uksort($this->version_callbacks, 'version_compare');
-
-        $callbacks_run = 0;
-        
-        foreach ($this->version_callbacks as $callback_version => $callback) {
-            // Only run callbacks for versions newer than old version
-            // but not newer than current version
-            if (version_compare($old_version, $callback_version, '<') && 
-                version_compare($callback_version, $this->version, '<=')) {
-                
-                try {
-                    $this->logger->info("Running version callback", [
-                        'version' => $callback_version,
-                        'plugin' => $this->plugin_name
-                    ]);
-                    
-                    $callback($old_version, $this->version);
-                    $callbacks_run++;
-                    
-                    $this->logger->info("Version callback completed", [
-                        'version' => $callback_version,
-                        'plugin' => $this->plugin_name
-                    ]);
-                    
-                } catch (\Exception $e) {
-                    $this->logger->error("Version callback failed", [
-                        'version' => $callback_version,
-                        'plugin' => $this->plugin_name,
-                        'error' => $e->getMessage()
-                    ]);
-                    throw $e;
-                }
-            }
-        }
-        
-        $this->logger->info("Version callbacks completed", [
-            'callbacks_run' => $callbacks_run,
-            'total_callbacks' => count($this->version_callbacks)
+        $this->logger->info("Firing version upgrade actions", [
+            'old_version' => $old_version,
+            'new_version' => $this->version
         ]);
+
+        // Fire a general upgrade action with version info
+        do_action($this->hook_prefix . '_database_upgrade', $old_version, $this->version, $this->core);
+
+        // Fire version-specific actions for each version between old and new
+        $versions_to_process = $this->get_versions_between($old_version, $this->version);
+        
+        foreach ($versions_to_process as $version) {
+            $sanitized_version = str_replace('.', '_', $version);
+            $action_name = $this->hook_prefix . '_database_upgrade_to_' . $sanitized_version;
+            
+            $this->logger->debug("Firing version-specific action: {$action_name}");
+            
+            do_action($action_name, $old_version, $this->version, $this->core);
+        }
     }
 
     /**
-     * Get current database version
+     * Get list of versions that need processing between old and current version
+     * 
+     * This is a simple implementation that returns only the current version.
+     * You could expand this to include intermediate versions if needed for
+     * complex upgrade paths.
+     * 
+     * @param string $old_version Previous version
+     * @param string $current_version Target version
+     * @return array Array of versions to process
+     */
+    private function get_versions_between(string $old_version, string $current_version): array
+    {
+        // For now, just return the current version
+        // You could expand this to include intermediate versions if needed
+        return [$current_version];
+    }
+
+    /**
+     * Get current database version from WordPress options
+     * 
+     * @return string|false Current version or false if not set
      */
     public function get_version(): string|false
     {
@@ -329,6 +479,9 @@ class DatabaseManager implements DatabaseManagerInterface
 
     /**
      * Drop all registered tables
+     * 
+     * Used during plugin uninstallation. Removes all registered tables
+     * and cleans up the version option.
      */
     public function drop_tables(): void
     {
@@ -371,7 +524,10 @@ class DatabaseManager implements DatabaseManagerInterface
     }
 
     /**
-     * Get table name with prefix
+     * Get table name with WordPress prefix
+     * 
+     * @param string $table_name Table name without prefix
+     * @return string Full table name with WordPress prefix
      */
     public function get_table_name(string $table_name): string
     {
@@ -381,6 +537,9 @@ class DatabaseManager implements DatabaseManagerInterface
 
     /**
      * Get table metadata for debugging/introspection
+     * 
+     * @param string $table_name Table name
+     * @return array|null Metadata array or null if table not found
      */
     public function get_table_metadata(string $table_name): ?array
     {
@@ -393,7 +552,10 @@ class DatabaseManager implements DatabaseManagerInterface
     }
 
     /**
-     * Check if a table exists
+     * Check if a table exists in the database
+     * 
+     * @param string $table_name Full table name with prefix
+     * @return bool True if table exists
      */
     private function table_exists(string $table_name): bool
     {
@@ -407,6 +569,9 @@ class DatabaseManager implements DatabaseManagerInterface
 
     /**
      * Generate a unique version option name based on plugin name
+     * 
+     * @param string $plugin_name Plugin name
+     * @return string WordPress option name for storing database version
      */
     private function generate_version_option_name(string $plugin_name): string
     {
@@ -415,7 +580,7 @@ class DatabaseManager implements DatabaseManagerInterface
     }
 
     /**
-     * Update the database version
+     * Update the database version in WordPress options
      */
     private function update_version(): void
     {

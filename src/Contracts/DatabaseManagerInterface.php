@@ -14,14 +14,6 @@ interface DatabaseManagerInterface {
 	 */
 	public function register_table(string $table_name, string $schema, array $metadata = []): void;
 
-	/**
-	 * Register a version-specific upgrade callback
-	 *
-	 * @param string $version
-	 * @param callable $callback
-	 * @return void
-	 */
-	public function register_version_callback(string $version, callable $callback): void;
 
 	/**
 	 * Create/update all registered tables using dbDelta
@@ -30,13 +22,8 @@ interface DatabaseManagerInterface {
 	 */
 	public function create_tables(): void;
 
-	/**
-	 * Create/update specific tables only
-	 *
-	 * @param array $table_names Array of table names to update
-	 * @return void
-	 */
-	public function create_specific_tables(array $table_names): void;
+
+	//public function create_specific_tables(array $table_names): void;
 
 	/**
 	 * Check if database needs upgrade and run it (lightweight check)
@@ -45,12 +32,8 @@ interface DatabaseManagerInterface {
 	 */
 	public function maybe_upgrade(): void;
 
-	/**
-	 * Force database upgrade check - used during activation
-	 *
-	 * @return void
-	 */
-	public function check_and_upgrade(): void;
+
+	//public function check_and_upgrade(): void;
 
 	/**
 	 * Get a cached database version check to avoid repeated queries

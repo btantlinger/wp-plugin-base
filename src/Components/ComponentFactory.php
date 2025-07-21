@@ -1,6 +1,6 @@
 <?php
 
-namespace WebMoves\PluginBase\Factories;
+namespace WebMoves\PluginBase\Components;
 
 use WebMoves\PluginBase\Components\AbstractComponent;
 use WebMoves\PluginBase\Concerns\Components\ComponentRegistration;
@@ -10,6 +10,7 @@ use WebMoves\PluginBase\Concerns\Components\HasCli;
 use WebMoves\PluginBase\Concerns\Components\HasFilter;
 use WebMoves\PluginBase\Concerns\Components\HasSchedule;
 use WebMoves\PluginBase\Concerns\Components\HasShortcode;
+
 
 class ComponentFactory
 {

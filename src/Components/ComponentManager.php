@@ -16,9 +16,9 @@ class ComponentManager implements ComponentManagerInterface
 
 	}
 
-	public function register_component(ComponentInterface $component): void
+	public function add(ComponentInterface $component): void
 	{
-		if ($this->is_registered($component)) {
+		if ($this->contains($component)) {
 			throw new \RuntimeException("Component already registered");
 		}
 
@@ -136,12 +136,12 @@ class ComponentManager implements ComponentManagerInterface
 		return in_array($lifecycle, $this->initialized_lifecycles, true);
 	}
 
-	public function is_registered(ComponentInterface $component): bool
+	public function contains(ComponentInterface $component): bool
 	{
 		return in_array($component, $this->components, true);
 	}
 
-	public function remove_component(ComponentInterface $component): void
+	public function remove(ComponentInterface $component): void
 	{
 		$key = array_search($component, $this->components, true);
 		if ($key !== false) {

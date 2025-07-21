@@ -6,31 +6,39 @@ use DI\Container;
 use DI\ContainerBuilder;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use WebMoves\PluginBase\Components\ComponentManager;
 use WebMoves\PluginBase\Configuration\ConfigurationManager;
 use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
 use WebMoves\PluginBase\Contracts\Components\ComponentManagerInterface;
 use WebMoves\PluginBase\Contracts\Configuration\ConfigurationManagerInterface;
-use WebMoves\PluginBase\Contracts\DatabaseManagerInterface;
 use WebMoves\PluginBase\Contracts\PluginCoreInterface;
 use WebMoves\PluginBase\Enums\Lifecycle;
 use WebMoves\PluginBase\Logging\LoggerFactory;
+use WebMoves\PluginBase\Plugin\PluginMetadata;
+use wpdb;
 
 class PluginCore implements PluginCoreInterface
 {
     private Container $container;
 	private ConfigurationManagerInterface $config;
 
+	private ComponentManagerInterface $component_manager;
+
 	private string $plugin_file;
-    private string $plugin_version;
-    private ?string $database_version;
-    private string $plugin_name;
+
+	private PluginMetadata $metadata;
+
+
+	//private string $plugin_version;
+    //private ?string $database_version;
+    //private string $plugin_name;
     private bool $initialized = false;
     /**
      * The plugin text domain
      *
      * @var string
      */
-    private string $text_domain;
+    //private string $text_domain;
 
     /**
      * Constructor
@@ -39,17 +47,14 @@ class PluginCore implements PluginCoreInterface
      * @param string $plugin_version The plugin version
      * @param string|null $text_domain The plugin text domain (optional, will be derived from plugin name if not provided)
      */
-    public function __construct(string $plugin_file, string $plugin_version, ?string $text_domain = null, ?string $database_version = null)
+    public function __construct(string $plugin_file)
     {
-        $this->plugin_file = $plugin_file;
-        $this->plugin_version = $plugin_version;
-        $this->database_version = $database_version;
-        $this->plugin_name = $this->extract_plugin_name($plugin_file);
-        $this->text_domain = $text_domain ?? $this->derive_text_domain();
-
+	    $this->plugin_file = $plugin_file;
+	    $this->metadata = new PluginMetadata($plugin_file);
 	    $this->config = new ConfigurationManager($this);
-
+		$this->component_manager = new ComponentManager();
 	    $this->setup_container();
+
     }
 
     /**
@@ -84,7 +89,7 @@ class PluginCore implements PluginCoreInterface
         }
 
         // Load textdomain early for translations
-        add_action('init', [$this, 'load_textdomain']);
+       // add_action('init', [$this, 'load_textdomain']);
 
         // Register lifecycle hooks dynamically
 	    $this->setup_plugin_management_hooks();
@@ -173,7 +178,7 @@ class PluginCore implements PluginCoreInterface
 			$text_domain = $plugin_data['TextDomain'] ?? null;
 
 			// Create temporary instance for uninstall
-			$instance = new self($plugin_file, $version, $text_domain);
+			$instance = new self($plugin_file);
 			$instance->on_lifecycle(Lifecycle::UNINSTALL);
 
 			// Clean up installation marker
@@ -191,7 +196,7 @@ class PluginCore implements PluginCoreInterface
 	 */
 	private function get_installation_option_key(): string
 	{
-		return sanitize_key($this->get_name() . '_installed');
+		return sanitize_key( $this->get_plugin_name() . '_installed');
 	}
 
 
@@ -202,7 +207,7 @@ class PluginCore implements PluginCoreInterface
     public function on_lifecycle(Lifecycle $lifecycle): void
     {
         $this->get_logger()->info(
-            $this->get_name() . ' on_' . $lifecycle->value, 
+	        $this->get_plugin_name() . ' on_' . $lifecycle->value,
             ['version' => $this->get_version(), 'lifecycle' => $lifecycle->value]
         );
 
@@ -227,6 +232,8 @@ class PluginCore implements PluginCoreInterface
      */
     private function setup_container(): void
     {
+		global $wpdb;
+
         $builder = new ContainerBuilder();
         $builder->useAutowiring(false);
         $builder->useAttributes(false);
@@ -234,15 +241,17 @@ class PluginCore implements PluginCoreInterface
 		// Core dependencies required for the plugin to function
         $builder->addDefinitions([
             'plugin.file' => $this->plugin_file,
-            'plugin.version' => $this->plugin_version,
-            'plugin.database_version' => $this->database_version,
-            'plugin.name' => $this->plugin_name,
-            'plugin.text_domain' => $this->text_domain,
+            'plugin.version' => $this->metadata->get_version(),
+            'plugin.name' => $this->metadata->get_name(),
+            'plugin.text_domain' => $this->metadata->get_text_domain(),
             'plugin.path' => plugin_dir_path($this->plugin_file),
             'plugin.url' => plugin_dir_url($this->plugin_file),
             // Add PluginCore instance to the container definitions
             PluginCoreInterface::class => $this,
+			ComponentManagerInterface::class => $this->component_manager,
+            PluginMetadata::class => $this->metadata, // Available for injection
             ConfigurationManagerInterface::class => $this->config,
+	        wpdb::class => $wpdb,
         ]);
 
 	    $services = $this->config->getServices();
@@ -258,7 +267,7 @@ class PluginCore implements PluginCoreInterface
 
 		foreach($components as $id => $component) {
 			$component = $this->container->get($id);
-			$this->register_component($component);;
+			$this->get_component_manager()->add($component);
 		}
     }
 
@@ -302,12 +311,12 @@ class PluginCore implements PluginCoreInterface
      * @param mixed $value Service instance or factory
      * @return void
      */
-    public function set(string $id, mixed $value, bool $auto_register_components=true): void
+    public function set(string $id, mixed $value, bool $auto_add_components=true): void
     {
         $this->container->set($id, $value);
         $object = $this->container->get($id);
-        if($auto_register_components && $object instanceof ComponentInterface) {
-            $this->register_component($object);
+        if( $auto_add_components && $object instanceof ComponentInterface) {
+			$this->get_component_manager()->add($object);
         }
     }
 
@@ -322,37 +331,9 @@ class PluginCore implements PluginCoreInterface
         return $this->container->get($id);
     }
 
-    /**
-     * Register a component
-     *
-     * @param \WebMoves\PluginBase\Contracts\Components\ComponentInterface $component
-     *
-     * @return void
-     */
-    public function register_component(ComponentInterface $component): void
-    {
-        /**
-         * @var $component_manager ComponentManagerInterface
-         */
-        $component_manager = $this->get(ComponentManagerInterface::class);
-        $component_manager->register_component($component);
-    }
 
-    /**
-     * Check if the given component is registered.
-     *
-     * @param ComponentInterface $component The component to check.
-     *
-     * @return bool True if the component is registered, false otherwise.
-     */
-    public function is_registered(ComponentInterface $component): bool
-    {
-        /**
-         * @var $component_manager ComponentManagerInterface
-         */
-        $component_manager = $this->get(ComponentManagerInterface::class);
-        return $component_manager->is_registered($component);
-    }
+
+
 
     /**
      * Handle plugins_loaded action (for backward compatibility and database handling)
@@ -361,16 +342,12 @@ class PluginCore implements PluginCoreInterface
      */
     public function on_plugins_loaded(): void
     {
-        $this->get_logger()->info($this->get_name() . ' on_plugins_loaded', ['version' => $this->get_version()]);
-        
-        // Handle database upgrades
-        $database_manager = $this->get(DatabaseManagerInterface::class);
-        $database_manager->maybe_upgrade();
+        $this->get_logger()->info( $this->get_plugin_name() . ' on_plugins_loaded', [ 'version' => $this->get_version()]);
     }
 
     public function get_hook_prefix(): string
     {
-        return sanitize_title_with_dashes($this->get_name());
+        return sanitize_title_with_dashes($this->get_plugin_name());
     }
 
     public function get_logger(?string $channel=null): LoggerInterface
@@ -382,10 +359,12 @@ class PluginCore implements PluginCoreInterface
             }
             $logger = $this->get_container()->get("logger.$channel");
         } catch (\Exception $e) {
+
         }
 
         if(!$logger) {
-            $logger = LoggerFactory::createLogger($this->get_name(), $this->get_plugin_file(), $channel);
+			$factory = new LoggerFactory($this->config, $this->get_plugin_name());
+            $logger = $factory->create($channel);
         }
         return $logger;
     }
@@ -413,12 +392,7 @@ class PluginCore implements PluginCoreInterface
      */
     public function get_version(): string
     {
-        return $this->plugin_version;
-    }
-
-    public function get_database_version(): ?string
-    {
-        return $this->database_version;
+        return $this->metadata->get_version();
     }
 
     /**
@@ -426,10 +400,20 @@ class PluginCore implements PluginCoreInterface
      *
      * @return string
      */
-    public function get_name(): string
+    public function get_plugin_name(): string
     {
-        return $this->plugin_name;
+        return $this->metadata->get_name();
     }
+
+	/**
+	 * Get the plugin text domain
+	 *
+	 * @return string
+	 */
+	public function get_text_domain(): string
+	{
+		return $this->metadata->get_text_domain();
+	}
 
     /**
      * Get plugin file path
@@ -441,38 +425,12 @@ class PluginCore implements PluginCoreInterface
         return $this->plugin_file;
     }
 
-    /**
-     * Get the plugin text domain
-     *
-     * @return string
-     */
-    public function get_text_domain(): string
-    {
-        return $this->text_domain;
-    }
+	public function get_metadata(): PluginMetadata
+	{
+		return $this->metadata;
+	}
 
-    /**
-     * Derive text domain from plugin name
-     * Converts plugin name to lowercase, replaces spaces with hyphens
-     *
-     * @return string
-     */
-    private function derive_text_domain(): string
-    {
-        return sanitize_title($this->plugin_name);
-    }
-
-    /**
-     * Load plugin textdomain for translations
-     *
-     * @return void
-     */
-    public function load_textdomain(): void
-    {
-        load_plugin_textdomain(
-            $this->text_domain,
-            false,
-            dirname(plugin_basename($this->plugin_file)) . '/languages'
-        );
-    }
+	public function get_component_manager(): ComponentManagerInterface {
+		return $this->component_manager;
+	}
 }

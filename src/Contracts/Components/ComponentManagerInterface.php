@@ -7,12 +7,30 @@ use WebMoves\PluginBase\Enums\Lifecycle;
 
 interface ComponentManagerInterface {
 	/**
-	 * Register a component
+	 * add a component
 	 *
 	 * @param ComponentInterface $component
 	 * @return void
 	 */
-	public function register_component(ComponentInterface $component): void;
+	public function add(ComponentInterface $component): void;
+
+	/**
+	 * Remove a component instance
+	 *
+	 * @param ComponentInterface $component
+	 * @return void
+	 */
+	public function remove(ComponentInterface $component): void;
+
+
+	/**
+	 * Check if a component instance is added
+	 *
+	 * @param ComponentInterface $component
+	 * @return bool
+	 */
+	public function contains(ComponentInterface $component): bool;
+
 
 	/**
 	 * Initialize all registered components
@@ -36,26 +54,10 @@ interface ComponentManagerInterface {
 	public function get_components_by_lifecycle(Lifecycle $lifecycle): array;
 
 	/**
-	 * Get all registered components
+	 * Get all components
 	 *
 	 * @return ComponentInterface[]
 	 */
 	public function get_components(): array;
-
-	/**
-	 * Check if a component instance is registered
-	 *
-	 * @param ComponentInterface $component
-	 * @return bool
-	 */
-	public function is_registered(ComponentInterface $component): bool;
-
-	/**
-	 * Remove a component instance
-	 *
-	 * @param ComponentInterface $component
-	 * @return void
-	 */
-	public function remove_component(ComponentInterface $component): void;
 
 }

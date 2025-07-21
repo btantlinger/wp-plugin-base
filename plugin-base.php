@@ -13,6 +13,7 @@
  * Requires PHP: 8.3
  * Network: false
  * License: GPL v2 or later
+ * RequiresPlugins: acf
  */
 
 // Prevent direct access
@@ -32,6 +33,6 @@ define('WM_PLUGIN_BASE_URL', plugin_dir_url(__FILE__));
 require_once WM_PLUGIN_BASE_PATH . 'vendor/autoload.php';
 
 
-\WebMoves\PluginBase\Examples\TestPlugin::init_plugin(__FILE__, WM_PLUGIN_BASE_VERSION);
+\WebMoves\PluginBase\Examples\TestPlugin::init_plugin(__FILE__);
 
 

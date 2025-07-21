@@ -20,8 +20,8 @@ class SettingsPage extends AbstractAdminPage
 	protected function before_register(): void
 	{
 		$core = $this->builder->get_plugin_core();
-		if(!$core->is_registered($this->builder)) {
-			$core->register_component($this->builder);
+		if(!$core->get_component_manager()->contains($this->builder)) {
+			$core->get_component_manager()->add($this->builder);
 		}
 	}
 

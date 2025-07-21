@@ -6,6 +6,7 @@ use Monolog\Formatter\LineFormatter;
 use Monolog\Level;
 use Psr\Log\LoggerInterface;
 use WebMoves\PluginBase\Components\ComponentManager;
+use WebMoves\PluginBase\Components\Support\TextDomainLoader;
 use WebMoves\PluginBase\Contracts\Components\ComponentManagerInterface;
 use WebMoves\PluginBase\Contracts\DatabaseManagerInterface;
 use WebMoves\PluginBase\Contracts\PluginCoreInterface;
@@ -15,8 +16,12 @@ use WebMoves\PluginBase\Contracts\Settings\SettingsManagerFactoryInterface;
 use WebMoves\PluginBase\Contracts\Templates\TemplateRendererInterface;
 use WebMoves\PluginBase\DatabaseManager;
 use WebMoves\PluginBase\Logging\LoggerFactory;
+use WebMoves\PluginBase\Plugin\PluginMetadata;
 use WebMoves\PluginBase\Settings\SettingsManagerFactory;
 use WebMoves\PluginBase\Templates\TemplateRenderer;
+use WebMoves\PluginBase\Components\Database\DatabaseInstaller;
+use WebMoves\PluginBase\Components\Database\DatabaseVersionChecker;
+use WebMoves\PluginBase\Contracts\Configuration\ConfigurationManagerInterface;
 use function DI\create;
 use function DI\factory;
 use function DI\get;
@@ -32,28 +37,20 @@ return [
 	| path relative to the plugins directory, and the value should be the plugin's
 	| display name.
 	|
+	|
+	| Example: 'required_plugins' => [
+	|   'woocommerce/woocommerce.php' => ['name' => 'WooCommerce', 'min_version' => '8.0.0'],
+	|   'acf/acf.php' => 'Advanced Custom Fields'
+	| ]
+	|
 	*/
 	'dependencies' => [
 		'required_plugins' => [
-			'woocommerce/woocommerce.php' => 'FooCommerce',
+			'woocommerce/woocommerce.php' => 'WooCommerce',
 			'advanced-custom-fields/acf.php' => 'Advanced Custom Fields',
 		],
 	],
 
-	/*
-	|--------------------------------------------------------------------------
-	| Components
-	|--------------------------------------------------------------------------
-	|
-	| Components that implement ComponentInterface and will be registered
-	| with the ComponentManager for lifecycle management.
-	|
-	*/
-	'components' => [
-		// Core framework components
-		DependencyManager::class => create(DependencyManager::class)->constructor(get(PluginCoreInterface::class)),
-		DependencyNotice::class => create(DependencyNotice::class)->constructor(get(DependencyManager::class)),
-	],
 
 	/*
 	|--------------------------------------------------------------------------
@@ -70,50 +67,64 @@ return [
 		// 'http.client' => create(HttpClient::class)->constructor(get('plugin.name')),
 
 		// Plugin-specific services would go here or be overridden in plugin configs
-		DatabaseManagerInterface::class => create(DatabaseManager::class)->constructor(get(PluginCoreInterface::class)),
-		ComponentManagerInterface::class => create(ComponentManager::class),
+		DatabaseManagerInterface::class => create(DatabaseManager::class)
+			->constructor(
+				get(PluginCoreInterface::class),
+				get(ConfigurationManagerInterface::class)
+			),
+		//ComponentManagerInterface::class => create(ComponentManager::class),
 
 		SettingsManagerFactoryInterface::class => create(SettingsManagerFactory::class),
-		TemplateRendererInterface::class => create(TemplateRenderer::class)->constructor(get(PluginCoreInterface::class)),
+		TemplateRendererInterface::class => create(TemplateRenderer::class)
+			->constructor(get(PluginCoreInterface::class)),
 
 		// Logger Factory
 		LoggerFactory::class => create(LoggerFactory::class)
-			->constructor(get('plugin.name'), get('plugin.file')),
+			->constructor(get(ConfigurationManagerInterface::class), get('plugin.name')),
 
 		// Default logger (for backward compatibility)
-		LoggerInterface::class => factory(function ($container) {
-			return $container->get(LoggerFactory::class)->create();
+		LoggerInterface::class => factory(function($container){
+			return $container->get(LoggerFactory::class)->create('default');
 		}),
-
-		'logger.default' => factory(function ($container) {
-			return $container->get(LoggerFactory::class)->create();
+		"logger.default" => factory(function($container){
+			return $container->get(LoggerInterface::class);
 		}),
-
-		// Channel-specific loggers
-		'logger.app' => factory(function ($container) {
-			return LoggerFactory::createLogger(
-				$container->get('plugin.name'),
-				$container->get('plugin.file'),
-				'app'
-			);
+		"logger.app" => factory(function($container){
+			return $container->get(LoggerFactory::class)->create('app');
 		}),
-
-		'logger.database' => factory(function ($container) {
-			return LoggerFactory::createLogger(
-				$container->get('plugin.name'),
-				$container->get('plugin.file'),
-				'database'
-			);
+		"logger.database" => factory(function($container){
+			return $container->get(LoggerFactory::class)->create('database');
 		}),
-
-		'logger.api' => factory(function ($container) {
-			return LoggerFactory::createLogger(
-				$container->get('plugin.name'),
-				$container->get('plugin.file'),
-				'api'
-			);
+		"logger.api" => factory(function($container){
+			return $container->get(LoggerFactory::class)->create('api');
 		}),
 	],
+
+
+	/*
+	|--------------------------------------------------------------------------
+	| Components
+	|--------------------------------------------------------------------------
+	|
+	| Components that implement ComponentInterface and will be registered
+	| with the ComponentManager for lifecycle management.
+	|
+	*/
+	'components' => [
+		// Core framework components
+		DependencyManager::class => create(DependencyManager::class)
+			->constructor(get(PluginCoreInterface::class)),
+		DependencyNotice::class => create(DependencyNotice::class)
+			->constructor(get(DependencyManager::class)),
+
+		DatabaseInstaller::class => create(DatabaseInstaller::class)
+			->constructor(get(DatabaseManagerInterface::class), get(LoggerInterface::class)),
+		DatabaseVersionChecker::class => create(DatabaseVersionChecker::class)
+			->constructor(get(DatabaseManagerInterface::class), get(LoggerInterface::class)),
+
+		TextDomainLoader::class => create( TextDomainLoader::class)->constructor(get( PluginMetadata::class)),
+	],
+
 
 
 	/*
@@ -174,13 +185,49 @@ return [
 	| Database Configuration
 	|--------------------------------------------------------------------------
 	|
-	| Database related settings including migration settings, table prefixes, etc.
+	| Database related settings
+	| version: The version of the database, changing this triggers a database
+	| upgrade.
+	|
+	| tables: key => value associative array where the key is the table
+	| name (without wp db prefix) and the value is an SQL create table statement.
+	| Placeholders can be used in the SQL.
+	| - {table_name} is replaced with the key/table name.
+	| - {charset_collate} is replaced with the charset collate of the wp db.
+	|
 	|
 	*/
 	'database' => [
-		'auto_migrate' => true,
-		'backup_before_migration' => false,
-		'migration_timeout' => 30, // seconds
+		'version' => '1.0.1',
+		'tables' => [
+			'user_activity_log' => "CREATE TABLE {table_name} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            user_id bigint(20) unsigned NOT NULL,
+            activity_type varchar(50) NOT NULL,
+            activity_data longtext,
+            ip_address varchar(45),
+            user_agent text,
+            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_user_id (user_id),
+            KEY idx_activity_type (activity_type),
+            KEY idx_created_at (created_at)
+        ) {charset_collate};",
+
+			'plugin_settings' => "CREATE TABLE {table_name} (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            setting_key varchar(191) NOT NULL,
+            setting_value longtext,
+            setting_group varchar(100) DEFAULT 'general',
+            is_autoload tinyint(1) DEFAULT 0,
+            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY idx_setting_key_group (setting_key, setting_group),
+            KEY idx_setting_group (setting_group),
+            KEY idx_autoload (is_autoload)
+        ) {charset_collate};"
+		]
 	],
 
 	/*
