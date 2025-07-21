@@ -2,11 +2,11 @@
 
 namespace WebMoves\PluginBase\Components;
 
-use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
-use WebMoves\PluginBase\Contracts\Components\ComponentManagerInterface;
+use WebMoves\PluginBase\Contracts\Components\Component;
+use WebMoves\PluginBase\Contracts\Components\ComponentManager;
 use WebMoves\PluginBase\Enums\Lifecycle;
 
-class ComponentManager implements ComponentManagerInterface
+class DefaultComponentManager implements ComponentManager
 {
 	private array $components = [];
 	private array $initialized_lifecycles = [];
@@ -16,7 +16,7 @@ class ComponentManager implements ComponentManagerInterface
 
 	}
 
-	public function add(ComponentInterface $component): void
+	public function add(Component $component): void
 	{
 		if ($this->contains($component)) {
 			throw new \RuntimeException("Component already registered");
@@ -44,7 +44,7 @@ class ComponentManager implements ComponentManagerInterface
 		$lifecycle_components = $this->get_components_for_lifecycle($lifecycle);
 
 		// Sort components by priority
-		usort($lifecycle_components, function (ComponentInterface $a, ComponentInterface $b) {
+		usort($lifecycle_components, function (Component $a, Component $b) {
 			return $a->get_priority() <=> $b->get_priority();
 		});
 
@@ -71,7 +71,7 @@ class ComponentManager implements ComponentManagerInterface
 				$lifecycle_components = $new_lifecycle_components;
 				
 				// Re-sort with new components
-				usort($lifecycle_components, function (ComponentInterface $a, ComponentInterface $b) {
+				usort($lifecycle_components, function (Component $a, Component $b) {
 					return $a->get_priority() <=> $b->get_priority();
 				});
 			}
@@ -93,12 +93,12 @@ class ComponentManager implements ComponentManagerInterface
 	 */
 	private function get_components_for_lifecycle(Lifecycle $lifecycle): array
 	{
-		return array_filter($this->components, function(ComponentInterface $component) use ($lifecycle) {
+		return array_filter($this->components, function(Component $component) use ($lifecycle) {
 			return $component->register_on() === $lifecycle;
 		});
 	}
 
-	private function register_single_component(ComponentInterface $component): void
+	private function register_single_component(Component $component): void
 	{
 		if (!$component->can_register()) {
 			return;
@@ -136,12 +136,12 @@ class ComponentManager implements ComponentManagerInterface
 		return in_array($lifecycle, $this->initialized_lifecycles, true);
 	}
 
-	public function contains(ComponentInterface $component): bool
+	public function contains(Component $component): bool
 	{
 		return in_array($component, $this->components, true);
 	}
 
-	public function remove(ComponentInterface $component): void
+	public function remove(Component $component): void
 	{
 		$key = array_search($component, $this->components, true);
 		if ($key !== false) {

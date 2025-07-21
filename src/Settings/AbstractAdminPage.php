@@ -4,11 +4,11 @@ namespace WebMoves\PluginBase\Settings;
 
 use WebMoves\PluginBase\Concerns\Components\ComponentRegistration;
 use WebMoves\PluginBase\Concerns\Components\HasAdminMenu;
-use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
+use WebMoves\PluginBase\Contracts\Components\Component;
 use WebMoves\PluginBase\Enums\Lifecycle;
 
 
-abstract class AbstractAdminPage implements ComponentInterface  {
+abstract class AbstractAdminPage implements Component  {
 
 	use ComponentRegistration;
 	use HasAdminMenu;

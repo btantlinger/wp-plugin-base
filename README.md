@@ -132,9 +132,9 @@ This approach allows you to create components by combining traits for different 
 #### Example Component
 
 ```php
-use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
+use WebMoves\PluginBase\Contracts\Components\Component;
 
-class MyComponent implements ComponentInterface
+class MyComponent implements Component
 {
     public function register(): void
     {
@@ -168,13 +168,13 @@ class MyComponent implements ComponentInterface
 Here's a more creative example that uses multiple traits to create a component for displaying customizable notices in WordPress. This demonstrates how to build reusable components:
 
 ```php
-use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
+use WebMoves\PluginBase\Contracts\Components\Component;
 use WebMoves\PluginBase\Concerns\Components\ComponentRegistration;
 use WebMoves\PluginBase\Concerns\Components\HasAction;
 use WebMoves\PluginBase\Concerns\Components\HasShortcode;
 use WebMoves\PluginBase\Concerns\Components\HasFilter;
 
-class NoticeMessage implements ComponentInterface {
+class NoticeMessage implements Component {
 
     // Use the ComponentRegistration trait to implement the register() method automatically
     use ComponentRegistration;
@@ -307,7 +307,7 @@ class NoticeMessage implements ComponentInterface {
     
     /**
      * Define the component's priority
-     * Required by ComponentInterface
+     * Required by Component
      */
     public function get_priority(): int { 
         return 10; 
@@ -315,7 +315,7 @@ class NoticeMessage implements ComponentInterface {
     
     /**
      * Determine if this component should be registered
-     * Required by ComponentInterface
+     * Required by Component
      */
     public function can_register(): bool {
         // This component can be registered in any context
@@ -436,7 +436,7 @@ namespace YourNamespace;
 use WebMoves\PluginBase\AbstractPlugin;
 use WebMoves\PluginBase\Settings\MenuAdminPage;
 use WebMoves\PluginBase\Settings\SettingsPage;
-use WebMoves\PluginBase\Settings\BasicSettingsBuilder;
+use WebMoves\PluginBase\Settings\DefaultSettingsBuilder;
 
 class YourPlugin extends AbstractPlugin
 {
@@ -452,7 +452,7 @@ class YourPlugin extends AbstractPlugin
         $plugin_slug = 'your-plugin';
         
         // Create a settings builder with providers
-        $builder = new BasicSettingsBuilder(
+        $builder = new DefaultSettingsBuilder(
             $this->get_core(),
             'your_plugin_settings',
             'your-plugin-settings',
@@ -504,7 +504,7 @@ public function get_services(): array
 Type-safe settings with automatic prefixing and validation:
 
 ```php
-use WebMoves\PluginBase\Contracts\Settings\SettingsProviderInterface;
+use WebMoves\PluginBase\Contracts\Settings\SettingsProvider;
 use WebMoves\PluginBase\Settings\AbstractSettingsProvider;
 
 class ApiSettingsProvider extends AbstractSettingsProvider
@@ -582,7 +582,7 @@ To create a settings page that displays and manages plugin settings:
 
 ```php
 use WebMoves\PluginBase\Settings\SettingsPage;
-use WebMoves\PluginBase\Settings\BasicSettingsBuilder;
+use WebMoves\PluginBase\Settings\DefaultSettingsBuilder;
 
 // In your plugin's get_services() method
 public function get_services(): array
@@ -590,7 +590,7 @@ public function get_services(): array
     $plugin_slug = 'my-plugin';
     
     // Create a settings builder with providers
-    $builder = new BasicSettingsBuilder(
+    $builder = new DefaultSettingsBuilder(
         $this->get_core(),
         'my_plugin_settings',      // Option name
         'my-plugin-settings',      // Page slug

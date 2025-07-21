@@ -4,7 +4,7 @@ namespace WebMoves\PluginBase\Contracts\Components;
 
 use WebMoves\PluginBase\Enums\Lifecycle;
 
-interface ComponentInterface
+interface Component
 {
 	public function register_on(): Lifecycle;
 

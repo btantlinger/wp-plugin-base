@@ -2,7 +2,7 @@
 
 namespace WebMoves\PluginBase\Contracts\Settings;
 
-interface SettingsManagerInterface
+interface SettingsManager
 {
     /**
      * Get the WordPress-safe settings scope for use as an option name

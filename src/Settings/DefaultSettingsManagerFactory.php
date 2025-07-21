@@ -2,36 +2,38 @@
 
 namespace WebMoves\PluginBase\Settings;
 
-use WebMoves\PluginBase\Contracts\Settings\SettingsManagerFactoryInterface;
-use WebMoves\PluginBase\Contracts\Settings\SettingsManagerInterface;
+use WebMoves\PluginBase\Contracts\Settings\SettingsManagerFactory;
+use WebMoves\PluginBase\Contracts\Settings\SettingsManager;
 
 /**
- * Factory for creating SettingsManager instances with automatic prefix generation
+ * Factory for creating DefaultSettingsManager instances with automatic prefix generation
  */
-class SettingsManagerFactory implements SettingsManagerFactoryInterface
+class DefaultSettingsManagerFactory implements SettingsManagerFactory
 {
 
     /**
-     * Create a SettingsManager instance with automatic prefix based on calling class
+     * Create a DefaultSettingsManager instance with automatic prefix based on calling class
      *
      * @param object|string|null $context The class instance, class name, or null for auto-detection
-     * @return SettingsManagerInterface
+     *
+     * @return SettingsManager
      */
-    public function create(object|string|null $context = null): SettingsManagerInterface
+    public function create(object|string|null $context = null ): SettingsManager
     {
         $prefix = $this->generate_prefix($context);
-        return new SettingsManager($prefix);
+        return new DefaultSettingsManager($prefix);
     }
 
     /**
-     * Create a SettingsManager instance with explicit prefix
+     * Create a DefaultSettingsManager instance with explicit prefix
      *
      * @param string $prefix The prefix to use
-     * @return SettingsManagerInterface
+     *
+     * @return SettingsManager
      */
-    public function create_with_prefix(string $prefix): SettingsManagerInterface
+    public function create_with_prefix(string $prefix ): SettingsManager
     {
-        return new SettingsManager($prefix);
+        return new DefaultSettingsManager($prefix);
     }
 
     /**

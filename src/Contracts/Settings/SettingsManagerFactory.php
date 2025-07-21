@@ -2,10 +2,10 @@
 
 namespace WebMoves\PluginBase\Contracts\Settings;
 
-interface SettingsManagerFactoryInterface
+interface SettingsManagerFactory
 {
     /**
-     * Create a SettingsManager instance with automatic prefix based on calling class
+     * Create a DefaultSettingsManager instance with automatic prefix based on calling class
      *
      * The prefix will be automatically generated based on the provided context:
      * - If an object is provided, uses the object's class name
@@ -13,7 +13,8 @@ interface SettingsManagerFactoryInterface
      * - If null is provided, attempts to detect the calling class from backtrace
      *
      * @param object|string|null $context The class instance, class name, or null for auto-detection
-     * @return SettingsManagerInterface
+     *
+     * @return SettingsManager
      *
      * @example
      * // Using object instance (recommended)
@@ -25,27 +26,28 @@ interface SettingsManagerFactoryInterface
      * // Auto-detection from backtrace
      * $settings = $factory->create();
      */
-    public function create($context = null): SettingsManagerInterface;
+    public function create($context = null ): SettingsManager;
 
     /**
-     * Create a SettingsManager instance with explicit prefix
+     * Create a DefaultSettingsManager instance with explicit prefix
      *
      * Use this method when you need full control over the prefix or when
      * the automatic prefix generation doesn't meet your needs.
      *
      * @param string $prefix The prefix to use for all option keys
-     * @return SettingsManagerInterface
+     *
+     * @return SettingsManager
      *
      * @example
      * $settings = $factory->create_with_prefix('my_custom_prefix');
      */
-    public function create_with_prefix(string $prefix): SettingsManagerInterface;
+    public function create_with_prefix(string $prefix ): SettingsManager;
 
     /**
      * Generate a prefix based on the given context
      *
      * This method can be used to preview what prefix would be generated
-     * for a given context without actually creating a SettingsManager instance.
+     * for a given context without actually creating a DefaultSettingsManager instance.
      *
      * @param object|string|null $context The class instance, class name, or null for auto-detection
      * @return string The generated prefix

@@ -2,9 +2,9 @@
 
 namespace WebMoves\PluginBase\Settings;
 
-use WebMoves\PluginBase\Contracts\Settings\FlashDataInterface;
+use WebMoves\PluginBase\Contracts\Settings\FlashData;
 
-class FlashData implements FlashDataInterface
+class DefaultFlashData implements FlashData
 {
     private string $meta_key;
     private array $marked_for_deletion = [];

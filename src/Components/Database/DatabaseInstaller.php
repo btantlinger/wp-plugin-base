@@ -2,15 +2,15 @@
 
 namespace WebMoves\PluginBase\Components\Database;
 
-use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
-use WebMoves\PluginBase\Contracts\DatabaseManagerInterface;
+use WebMoves\PluginBase\Contracts\Components\Component;
+use WebMoves\PluginBase\Contracts\Database\DatabaseManager;
 use WebMoves\PluginBase\Enums\Lifecycle;
 use Psr\Log\LoggerInterface;
 
-class DatabaseInstaller implements ComponentInterface
+class DatabaseInstaller implements Component
 {
 	public function __construct(
-		private DatabaseManagerInterface $databaseManager,
+		private DatabaseManager $databaseManager,
 		private LoggerInterface $logger
 	) {}
 

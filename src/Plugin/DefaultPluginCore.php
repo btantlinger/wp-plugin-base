@@ -1,28 +1,29 @@
 <?php
 
-namespace WebMoves\PluginBase;
+namespace WebMoves\PluginBase\Plugin;
 
 use DI\Container;
 use DI\ContainerBuilder;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use WebMoves\PluginBase\Components\ComponentManager;
-use WebMoves\PluginBase\Configuration\ConfigurationManager;
-use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
-use WebMoves\PluginBase\Contracts\Components\ComponentManagerInterface;
-use WebMoves\PluginBase\Contracts\Configuration\ConfigurationManagerInterface;
-use WebMoves\PluginBase\Contracts\PluginCoreInterface;
+use WebMoves\PluginBase\Components\DefaultComponentManager;
+use WebMoves\PluginBase\Configuration\DefaultConfiguration;
+use WebMoves\PluginBase\Contracts\Components\Component;
+use WebMoves\PluginBase\Contracts\Components\ComponentManager;
+use WebMoves\PluginBase\Contracts\Configuration\Configuration;
+use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 use WebMoves\PluginBase\Enums\Lifecycle;
 use WebMoves\PluginBase\Logging\LoggerFactory;
-use WebMoves\PluginBase\Plugin\PluginMetadata;
+use WebMoves\PluginBase\Contracts\Plugin\PluginMetadata;
+
 use wpdb;
 
-class PluginCore implements PluginCoreInterface
+class DefaultPluginCore implements PluginCore
 {
     private Container $container;
-	private ConfigurationManagerInterface $config;
+	private Configuration $config;
 
-	private ComponentManagerInterface $component_manager;
+	private ComponentManager $component_manager;
 
 	private string $plugin_file;
 
@@ -50,9 +51,9 @@ class PluginCore implements PluginCoreInterface
     public function __construct(string $plugin_file)
     {
 	    $this->plugin_file = $plugin_file;
-	    $this->metadata = new PluginMetadata($plugin_file);
-	    $this->config = new ConfigurationManager($this);
-		$this->component_manager = new ComponentManager();
+	    $this->metadata = new DefaultPluginMetadata($plugin_file);
+	    $this->config = new DefaultConfiguration($this);
+		$this->component_manager = new DefaultComponentManager();
 	    $this->setup_container();
 
     }
@@ -240,18 +241,18 @@ class PluginCore implements PluginCoreInterface
 
 		// Core dependencies required for the plugin to function
         $builder->addDefinitions([
-            'plugin.file' => $this->plugin_file,
-            'plugin.version' => $this->metadata->get_version(),
-            'plugin.name' => $this->metadata->get_name(),
-            'plugin.text_domain' => $this->metadata->get_text_domain(),
-            'plugin.path' => plugin_dir_path($this->plugin_file),
-            'plugin.url' => plugin_dir_url($this->plugin_file),
-            // Add PluginCore instance to the container definitions
-            PluginCoreInterface::class => $this,
-			ComponentManagerInterface::class => $this->component_manager,
-            PluginMetadata::class => $this->metadata, // Available for injection
-            ConfigurationManagerInterface::class => $this->config,
-	        wpdb::class => $wpdb,
+	        'plugin.file'                => $this->plugin_file,
+	        'plugin.version'             => $this->metadata->get_version(),
+	        'plugin.name'                => $this->metadata->get_name(),
+	        'plugin.text_domain'         => $this->metadata->get_text_domain(),
+	        'plugin.path'                => plugin_dir_path($this->plugin_file),
+	        'plugin.url'                 => plugin_dir_url($this->plugin_file),
+            // Add DefaultPluginCore instance to the container definitions
+	        PluginCore::class            => $this,
+	        ComponentManager::class      => $this->component_manager,
+	        PluginMetadata::class => $this->metadata, // Available for injection
+	        Configuration::class         => $this->config,
+	        wpdb::class                  => $wpdb,
         ]);
 
 	    $services = $this->config->getServices();
@@ -274,7 +275,7 @@ class PluginCore implements PluginCoreInterface
 	/**
 	 * Get the configuration manager
 	 */
-	public function get_config(): ConfigurationManagerInterface
+	public function get_config(): Configuration
 	{
 		return $this->config;
 	}
@@ -295,9 +296,9 @@ class PluginCore implements PluginCoreInterface
     private function initialize_components_for_lifecycle(Lifecycle $lifecycle): void
     {
         /**
-         * @var $component_manager ComponentManagerInterface
+         * @var $component_manager ComponentManager
          */
-        $component_manager = $this->get(ComponentManagerInterface::class);
+        $component_manager = $this->get(ComponentManager::class);
         $component_manager->initialize_components_for_lifecycle($lifecycle);
     }
 
@@ -315,7 +316,7 @@ class PluginCore implements PluginCoreInterface
     {
         $this->container->set($id, $value);
         $object = $this->container->get($id);
-        if( $auto_add_components && $object instanceof ComponentInterface) {
+        if( $auto_add_components && $object instanceof Component) {
 			$this->get_component_manager()->add($object);
         }
     }
@@ -330,9 +331,6 @@ class PluginCore implements PluginCoreInterface
     {
         return $this->container->get($id);
     }
-
-
-
 
 
     /**
@@ -430,7 +428,7 @@ class PluginCore implements PluginCoreInterface
 		return $this->metadata;
 	}
 
-	public function get_component_manager(): ComponentManagerInterface {
+	public function get_component_manager(): ComponentManager {
 		return $this->component_manager;
 	}
 }

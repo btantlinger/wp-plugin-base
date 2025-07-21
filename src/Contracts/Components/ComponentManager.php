@@ -5,31 +5,34 @@ namespace WebMoves\PluginBase\Contracts\Components;
 
 use WebMoves\PluginBase\Enums\Lifecycle;
 
-interface ComponentManagerInterface {
+interface ComponentManager {
 	/**
 	 * add a component
 	 *
-	 * @param ComponentInterface $component
+	 * @param Component $component
+	 *
 	 * @return void
 	 */
-	public function add(ComponentInterface $component): void;
+	public function add( Component $component): void;
 
 	/**
 	 * Remove a component instance
 	 *
-	 * @param ComponentInterface $component
+	 * @param Component $component
+	 *
 	 * @return void
 	 */
-	public function remove(ComponentInterface $component): void;
+	public function remove( Component $component): void;
 
 
 	/**
 	 * Check if a component instance is added
 	 *
-	 * @param ComponentInterface $component
+	 * @param Component $component
+	 *
 	 * @return bool
 	 */
-	public function contains(ComponentInterface $component): bool;
+	public function contains(Component $component): bool;
 
 
 	/**
@@ -56,7 +59,7 @@ interface ComponentManagerInterface {
 	/**
 	 * Get all components
 	 *
-	 * @return ComponentInterface[]
+	 * @return Component[]
 	 */
 	public function get_components(): array;
 

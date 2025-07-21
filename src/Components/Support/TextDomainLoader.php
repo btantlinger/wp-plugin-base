@@ -4,7 +4,7 @@ namespace WebMoves\PluginBase\Components\Support;
 
 use WebMoves\PluginBase\Components\AbstractComponent;
 use WebMoves\PluginBase\Enums\Lifecycle;
-use WebMoves\PluginBase\Plugin\PluginMetadata;
+use WebMoves\PluginBase\Contracts\Plugin\PluginMetadata;
 
 class TextDomainLoader extends AbstractComponent {
 
@@ -13,7 +13,7 @@ class TextDomainLoader extends AbstractComponent {
 	/**
 	 * @param PluginMetadata $metadata
 	 */
-	public function __construct( PluginMetadata $metadata ) {
+	public function __construct(PluginMetadata $metadata ) {
 		parent::__construct();
 		$this->metadata = $metadata;
 		$this->priority = -100;

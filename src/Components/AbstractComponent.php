@@ -2,9 +2,9 @@
 
 namespace WebMoves\PluginBase\Components;
 
-use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
+use WebMoves\PluginBase\Contracts\Components\Component;
 
-abstract class AbstractComponent implements ComponentInterface
+abstract class AbstractComponent implements Component
 {
     protected int $priority = 10;
     protected bool $should_load = true;

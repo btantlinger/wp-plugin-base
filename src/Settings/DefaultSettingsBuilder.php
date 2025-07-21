@@ -2,11 +2,11 @@
 
 namespace WebMoves\PluginBase\Settings;
 
-use WebMoves\PluginBase\Contracts\PluginCoreInterface;
+use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 
-class BasicSettingsBuilder extends AbstractSettingBuilder
+class DefaultSettingsBuilder extends AbstractSettingBuilder
 {
-	public function __construct(PluginCoreInterface $core, string $settingsGroup, string $page, array $settings_providers = [])
+	public function __construct(PluginCore $core, string $settingsGroup, string $page, array $settings_providers = [])
 	{
 		parent::__construct($core, $settingsGroup, $page, $settings_providers);
 	}

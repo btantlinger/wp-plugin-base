@@ -2,9 +2,9 @@
 
 namespace WebMoves\PluginBase\Settings;
 
-use WebMoves\PluginBase\Contracts\Settings\SettingsManagerInterface;
+use WebMoves\PluginBase\Contracts\Settings\SettingsManager;
 
-class SettingsManager implements SettingsManagerInterface
+class DefaultSettingsManager implements SettingsManager
 {
     private string $wp_option_name;
     private array $cache = [];

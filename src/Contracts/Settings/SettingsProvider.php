@@ -2,11 +2,11 @@
 
 namespace WebMoves\PluginBase\Contracts\Settings;
 
-interface SettingsProviderInterface
+interface SettingsProvider
 {
 
 
-	public function settings(): SettingsManagerInterface;
+	public function settings(): SettingsManager;
 
     /**
      * Get the settings configuration for this synchronizer

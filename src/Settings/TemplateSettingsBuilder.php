@@ -2,15 +2,15 @@
 
 namespace WebMoves\PluginBase\Settings;
 
-use WebMoves\PluginBase\Contracts\PluginCoreInterface;
-use WebMoves\PluginBase\Contracts\Templates\TemplateRendererInterface;
+use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
+use WebMoves\PluginBase\Contracts\Templates\TemplateRenderer;
 
 class TemplateSettingsBuilder extends AbstractSettingBuilder
 {
-	private TemplateRendererInterface $template_renderer;
+	private TemplateRenderer $template_renderer;
 
 
-	public function __construct(PluginCoreInterface $core, string $settingsGroup, string $page, TemplateRendererInterface $renderer, array $settings_providers = []) {
+	public function __construct(PluginCore $core, string $settingsGroup, string $page, TemplateRenderer $renderer, array $settings_providers = []) {
 		parent::__construct($core, $settingsGroup, $page, $settings_providers);
 		$this->template_renderer = $renderer;
 	}

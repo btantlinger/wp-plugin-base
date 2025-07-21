@@ -2,7 +2,7 @@
 
 namespace WebMoves\PluginBase\Settings;
 
-use WebMoves\PluginBase\Contracts\PluginCoreInterface;
+use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 
 
 class MenuAdminPage extends AbstractAdminPage {

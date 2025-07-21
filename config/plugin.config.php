@@ -5,23 +5,21 @@ use Monolog\Handler\ErrorLogHandler;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Level;
 use Psr\Log\LoggerInterface;
-use WebMoves\PluginBase\Components\ComponentManager;
 use WebMoves\PluginBase\Components\Support\TextDomainLoader;
-use WebMoves\PluginBase\Contracts\Components\ComponentManagerInterface;
-use WebMoves\PluginBase\Contracts\DatabaseManagerInterface;
-use WebMoves\PluginBase\Contracts\PluginCoreInterface;
+use WebMoves\PluginBase\Contracts\Database\DatabaseManager;
+use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 use WebMoves\PluginBase\Components\Support\DependencyManager;
 use WebMoves\PluginBase\Components\Support\DependencyNotice;
-use WebMoves\PluginBase\Contracts\Settings\SettingsManagerFactoryInterface;
-use WebMoves\PluginBase\Contracts\Templates\TemplateRendererInterface;
-use WebMoves\PluginBase\DatabaseManager;
+use WebMoves\PluginBase\Contracts\Settings\SettingsManagerFactory;
+use WebMoves\PluginBase\Contracts\Templates\TemplateRenderer;
+use WebMoves\PluginBase\Database\DefaultDatabaseManager;
 use WebMoves\PluginBase\Logging\LoggerFactory;
-use WebMoves\PluginBase\Plugin\PluginMetadata;
-use WebMoves\PluginBase\Settings\SettingsManagerFactory;
-use WebMoves\PluginBase\Templates\TemplateRenderer;
+use WebMoves\PluginBase\Contracts\Plugin\PluginMetadata;
+use WebMoves\PluginBase\Settings\DefaultSettingsManagerFactory;
+use WebMoves\PluginBase\Templates\DefaultTemplateRenderer;
 use WebMoves\PluginBase\Components\Database\DatabaseInstaller;
 use WebMoves\PluginBase\Components\Database\DatabaseVersionChecker;
-use WebMoves\PluginBase\Contracts\Configuration\ConfigurationManagerInterface;
+use WebMoves\PluginBase\Contracts\Configuration\Configuration;
 use function DI\create;
 use function DI\factory;
 use function DI\get;
@@ -58,7 +56,7 @@ return [
 	|--------------------------------------------------------------------------
 	|
 	| Non-component services, utilities, data objects, API clients, etc.
-	| These are registered in the container but don't implement ComponentInterface.
+	| These are registered in the container but don't implement Component.
 	|
 	*/
 	'services' => [
@@ -67,23 +65,23 @@ return [
 		// 'http.client' => create(HttpClient::class)->constructor(get('plugin.name')),
 
 		// Plugin-specific services would go here or be overridden in plugin configs
-		DatabaseManagerInterface::class => create(DatabaseManager::class)
+		DatabaseManager::class => create(DefaultDatabaseManager::class)
 			->constructor(
-				get(PluginCoreInterface::class),
-				get(ConfigurationManagerInterface::class)
+				get(PluginCore::class),
+				get(Configuration::class)
 			),
-		//ComponentManagerInterface::class => create(ComponentManager::class),
+		//ComponentManager::class => create(DefaultComponentManager::class),
 
-		SettingsManagerFactoryInterface::class => create(SettingsManagerFactory::class),
-		TemplateRendererInterface::class => create(TemplateRenderer::class)
-			->constructor(get(PluginCoreInterface::class)),
+		SettingsManagerFactory::class => create(DefaultSettingsManagerFactory::class),
+		TemplateRenderer::class       => create(DefaultTemplateRenderer::class)
+			->constructor(get(PluginCore::class)),
 
 		// Logger Factory
-		LoggerFactory::class => create(LoggerFactory::class)
-			->constructor(get(ConfigurationManagerInterface::class), get('plugin.name')),
+		LoggerFactory::class          => create(LoggerFactory::class)
+			->constructor(get(Configuration::class), get('plugin.name')),
 
 		// Default logger (for backward compatibility)
-		LoggerInterface::class => factory(function($container){
+		LoggerInterface::class        => factory(function($container){
 			return $container->get(LoggerFactory::class)->create('default');
 		}),
 		"logger.default" => factory(function($container){
@@ -106,21 +104,21 @@ return [
 	| Components
 	|--------------------------------------------------------------------------
 	|
-	| Components that implement ComponentInterface and will be registered
-	| with the ComponentManager for lifecycle management.
+	| Components that implement Component and will be registered
+	| with the DefaultComponentManager for lifecycle management.
 	|
 	*/
 	'components' => [
 		// Core framework components
 		DependencyManager::class => create(DependencyManager::class)
-			->constructor(get(PluginCoreInterface::class)),
+			->constructor(get(PluginCore::class)),
 		DependencyNotice::class => create(DependencyNotice::class)
 			->constructor(get(DependencyManager::class)),
 
 		DatabaseInstaller::class => create(DatabaseInstaller::class)
-			->constructor(get(DatabaseManagerInterface::class), get(LoggerInterface::class)),
+			->constructor(get(DatabaseManager::class), get(LoggerInterface::class)),
 		DatabaseVersionChecker::class => create(DatabaseVersionChecker::class)
-			->constructor(get(DatabaseManagerInterface::class), get(LoggerInterface::class)),
+			->constructor(get(DatabaseManager::class), get(LoggerInterface::class)),
 
 		TextDomainLoader::class => create( TextDomainLoader::class)->constructor(get( PluginMetadata::class)),
 	],

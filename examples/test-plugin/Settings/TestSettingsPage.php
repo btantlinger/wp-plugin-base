@@ -2,14 +2,14 @@
 
 namespace WebMoves\PluginBase\Examples\Settings;
 
-use WebMoves\PluginBase\Contracts\PluginCoreInterface;
-use WebMoves\PluginBase\Settings\BasicSettingsBuilder;
+use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
+use WebMoves\PluginBase\Settings\DefaultSettingsBuilder;
 use WebMoves\PluginBase\Settings\SettingsPage;
 
 class TestSettingsPage extends SettingsPage {
 
-	public function __construct(PluginCoreInterface $core, string $pageTitle, string $menuTitle, ?string $parent_slug=null) {
-		$builder = new BasicSettingsBuilder(
+	public function __construct(PluginCore $core, string $pageTitle, string $menuTitle, ?string $parent_slug=null) {
+		$builder = new DefaultSettingsBuilder(
 			$core,
 			"foo_plugin_settings",
 			"foo-plugin-settings",

@@ -4,7 +4,7 @@ namespace WebMoves\PluginBase\Settings;
 
 use WebMoves\PluginBase\Settings\AbstractSettingsProvider;
 
-class SettingsProvider extends AbstractSettingsProvider {
+class DefaultSettingsProvider extends AbstractSettingsProvider {
 
 	private array $settings_configuration;
 	public function __construct(string $scope, array $settings_configuration) {

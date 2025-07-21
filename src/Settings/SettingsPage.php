@@ -2,18 +2,18 @@
 
 namespace WebMoves\PluginBase\Settings;
 
-use WebMoves\PluginBase\Contracts\Settings\SettingsBuilderInterface;
+use WebMoves\PluginBase\Contracts\Settings\SettingsBuilder;
 
 class SettingsPage extends AbstractAdminPage
 {
-	protected SettingsBuilderInterface $builder;
+	protected SettingsBuilder $builder;
 
-	public function __construct(SettingsBuilderInterface $builder, string $page_title, string $menu_title, ?string $parent_slug, ?string $menu_icon=null, ?int $menu_position = null) {
+	public function __construct(SettingsBuilder $builder, string $page_title, string $menu_title, ?string $parent_slug, ?string $menu_icon=null, ?int $menu_position = null) {
 		parent::__construct($builder->get_settings_page(), $page_title, $menu_title,  $parent_slug, $menu_icon, $menu_position);
 		$this->builder = $builder;
 	}
 
-	public function get_settings_builder(): SettingsBuilderInterface {
+	public function get_settings_builder(): SettingsBuilder {
 		return $this->builder;
 	}
 

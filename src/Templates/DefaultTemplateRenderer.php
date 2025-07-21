@@ -2,15 +2,15 @@
 
 namespace WebMoves\PluginBase\Templates;
 
-use WebMoves\PluginBase\Contracts\PluginCoreInterface;
-use WebMoves\PluginBase\Contracts\Templates\TemplateRendererInterface;
+use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
+use WebMoves\PluginBase\Contracts\Templates\TemplateRenderer;
 
-class TemplateRenderer implements TemplateRendererInterface
+class DefaultTemplateRenderer implements TemplateRenderer
 {
     private string $template_dir;
     private array $global_data = [];
 
-    public function __construct(PluginCoreInterface $core)
+    public function __construct(PluginCore $core)
     {
 
 		$cont = $core->get_container();

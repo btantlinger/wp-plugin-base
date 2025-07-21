@@ -1,7 +1,7 @@
 <?php
 
 namespace WebMoves\PluginBase\Contracts\Settings;
-interface FlashDataInterface
+interface FlashData
 {
 	/**
 	 * Display all pending notices

@@ -2,10 +2,10 @@
 
 namespace WebMoves\PluginBase\Contracts\Settings;
 
-use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
-use WebMoves\PluginBase\Contracts\PluginCoreInterface;
+use WebMoves\PluginBase\Contracts\Components\Component;
+use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 
-interface SettingsBuilderInterface extends ComponentInterface
+interface SettingsBuilder extends Component
 {
 
     /**
@@ -36,9 +36,9 @@ interface SettingsBuilderInterface extends ComponentInterface
 	/**
 	 * Get all registered settings providers
 	 *
-	 * @return SettingsProviderInterface[] Array of registered settings providers
+	 * @return SettingsProvider[] Array of registered settings providers
 	 */
 	public function get_providers(): array;
 
-	public function get_plugin_core(): PluginCoreInterface;
+	public function get_plugin_core(): PluginCore;
 }

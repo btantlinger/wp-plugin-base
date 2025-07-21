@@ -2,14 +2,15 @@
 
 namespace WebMoves\PluginBase;
 
-use WebMoves\PluginBase\Contracts\DatabaseManagerInterface;
-use WebMoves\PluginBase\Contracts\PluginCoreInterface;
+use WebMoves\PluginBase\Contracts\Database\DatabaseManager;
+use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
+use WebMoves\PluginBase\Plugin\DefaultPluginCore;
 
 abstract class AbstractPlugin {
 
 	private static ?AbstractPlugin $instance = null;
 
-	protected PluginCoreInterface $core;
+	protected PluginCore $core;
 
 	public static function init_plugin( string $plugin_file): static {
 		if(!is_null(static::$instance)) {
@@ -28,12 +29,12 @@ abstract class AbstractPlugin {
 		return static::$instance;
 	}
 
-	protected static function create_core(string $plugin_file): PluginCoreInterface
+	protected static function create_core(string $plugin_file): PluginCore
 	{
-		return new PluginCore($plugin_file);
+		return new DefaultPluginCore($plugin_file);
 	}
 
-	private function __construct(PluginCoreInterface $core)
+	private function __construct(PluginCore $core)
 	{
 		$this->core = $core;
 
@@ -59,7 +60,7 @@ abstract class AbstractPlugin {
 		return [];
 	}
 
-	public function get_core(): PluginCoreInterface
+	public function get_core(): PluginCore
 	{
 		return $this->core;
 	}

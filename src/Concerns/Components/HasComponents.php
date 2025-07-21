@@ -3,7 +3,7 @@
 namespace WebMoves\PluginBase\Concerns\Components;
 
 use WebMoves\PluginBase\Concerns\PluginCoreHelper;
-use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
+use WebMoves\PluginBase\Contracts\Components\Component;
 
 trait HasComponents
 {
@@ -34,7 +34,7 @@ trait HasComponents
 	/**
 	 * Get services to register
 	 *
-	 * @return array<string, ComponentInterface> Service definitions
+	 * @return array<string, Component> Service definitions
 	 */
 	abstract protected function get_components(): array;
 }

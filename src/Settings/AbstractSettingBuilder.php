@@ -3,12 +3,12 @@
 namespace WebMoves\PluginBase\Settings;
 
 use Psr\Log\LoggerInterface;
-use WebMoves\PluginBase\Contracts\PluginCoreInterface;
-use WebMoves\PluginBase\Contracts\Settings\SettingsProviderInterface;
-use WebMoves\PluginBase\Contracts\Settings\SettingsBuilderInterface;
+use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
+use WebMoves\PluginBase\Contracts\Settings\SettingsProvider;
+use WebMoves\PluginBase\Contracts\Settings\SettingsBuilder;
 use WebMoves\PluginBase\Enums\Lifecycle;
 
-abstract class AbstractSettingBuilder implements SettingsBuilderInterface
+abstract class AbstractSettingBuilder implements SettingsBuilder
 {
 	private string $settingsGroup;
 	private string $page;
@@ -17,23 +17,23 @@ abstract class AbstractSettingBuilder implements SettingsBuilderInterface
 
 	protected LoggerInterface $logger;
 
-	protected FlashData $flash;
+	protected DefaultFlashData $flash;
 
 	protected $core;
 
 
-	public function __construct(PluginCoreInterface $core, string $settingsGroup, string $page, array $settings_providers = [],)
+	public function __construct(PluginCore $core, string $settingsGroup, string $page, array $settings_providers = [],)
 	{
 		$this->settingsGroup = $settingsGroup;
 		$this->page = $page;
 		$this->text_domain = $core->get_text_domain();
 		$this->logger = $core->get_logger('app');
-		$this->flash = new FlashData($page);
+		$this->flash = new DefaultFlashData($page);
 		$this->providers = $settings_providers;
 		$this->core = $core;
 	}
 
-	public function get_plugin_core(): PluginCoreInterface {
+	public function get_plugin_core(): PluginCore {
 		return $this->core;
 	}
 
@@ -53,7 +53,7 @@ abstract class AbstractSettingBuilder implements SettingsBuilderInterface
 		return $this->providers;
 	}
 
-	public function add_provider(SettingsProviderInterface $provider): void
+	public function add_provider(SettingsProvider $provider): void
 	{
 		$this->providers[] = $provider;
 	}
@@ -82,7 +82,7 @@ abstract class AbstractSettingBuilder implements SettingsBuilderInterface
 	}
 
 
-	private function register_provider_configuration(SettingsProviderInterface $provider): void
+	private function register_provider_configuration(SettingsProvider $provider): void
 	{
 		$config = $provider->get_settings_configuration();
 		$section = $config['section'];
@@ -135,7 +135,7 @@ abstract class AbstractSettingBuilder implements SettingsBuilderInterface
 		}
 	}
 
-	private function validate_and_sanitize_group(array $input, SettingsProviderInterface $provider, array $fields): array
+	private function validate_and_sanitize_group(array $input, SettingsProvider $provider, array $fields): array
 	{
 		$errors = [];
 		$sanitized = [];
@@ -223,7 +223,7 @@ abstract class AbstractSettingBuilder implements SettingsBuilderInterface
 	/**
 	 * Get the value to display in the form field
 	 */
-	protected function get_field_display_value(SettingsProviderInterface $provider, string $field_key, $default_value)
+	protected function get_field_display_value(SettingsProvider $provider, string $field_key, $default_value)
 	{
 		// Check for flash data first (from validation errors)
 		$flash_value = $this->get_flash_value($provider, $field_key, null);
@@ -235,7 +235,7 @@ abstract class AbstractSettingBuilder implements SettingsBuilderInterface
 		return $provider->settings()->get_scoped_option($field_key, $default_value);
 	}
 
-	protected function get_flash_value(SettingsProviderInterface $provider, string $field_key, $default = null)
+	protected function get_flash_value(SettingsProvider $provider, string $field_key, $default = null)
 	{
 		$form_key = $provider->settings()->get_settings_scope();
 		$flash_data = $this->flash->get_form_data($form_key);

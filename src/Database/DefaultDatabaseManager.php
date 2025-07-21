@@ -1,11 +1,11 @@
 <?php
 
-namespace WebMoves\PluginBase;
+namespace WebMoves\PluginBase\Database;
 
 use Psr\Log\LoggerInterface;
-use WebMoves\PluginBase\Contracts\Configuration\ConfigurationManagerInterface;
-use WebMoves\PluginBase\Contracts\PluginCoreInterface;
-use WebMoves\PluginBase\Contracts\DatabaseManagerInterface;
+use WebMoves\PluginBase\Contracts\Configuration\Configuration;
+use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
+use WebMoves\PluginBase\Contracts\Database\DatabaseManager;
 
 /**
  * Database Manager
@@ -85,7 +85,7 @@ use WebMoves\PluginBase\Contracts\DatabaseManagerInterface;
  * @package WebMoves\PluginBase
  * @since 1.0.0
  */
-class DatabaseManager implements DatabaseManagerInterface
+class DefaultDatabaseManager implements DatabaseManager
 {
     /**
      * Current database version from configuration
@@ -103,7 +103,7 @@ class DatabaseManager implements DatabaseManagerInterface
     private string $plugin_name;
 
     /**
-     * Hook prefix for WordPress actions (from PluginCore::get_hook_prefix())
+     * Hook prefix for WordPress actions (from DefaultPluginCore::get_hook_prefix())
      */
     private string $hook_prefix;
 
@@ -121,7 +121,7 @@ class DatabaseManager implements DatabaseManagerInterface
     /**
      * Plugin core instance
      */
-    protected PluginCoreInterface $core;
+    protected PluginCore $core;
     
     /**
      * Cache for database version check to avoid repeated queries
@@ -136,10 +136,10 @@ class DatabaseManager implements DatabaseManagerInterface
      * Loads database version and tables from configuration, sets up logging,
      * and registers all configured tables automatically.
      *
-     * @param PluginCoreInterface $core Plugin core instance
-     * @param ConfigurationManagerInterface $config Configuration manager
+     * @param \WebMoves\PluginBase\Contracts\Plugin\PluginCore $core Plugin core instance
+     * @param Configuration $config Configuration manager
      */
-    public function __construct(PluginCoreInterface $core, ConfigurationManagerInterface $config)
+    public function __construct(PluginCore $core, Configuration $config)
     {
         $this->core = $core;
 

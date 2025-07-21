@@ -2,19 +2,19 @@
 
 namespace WebMoves\PluginBase\Settings;
 
-use WebMoves\PluginBase\Contracts\Settings\SettingsManagerInterface;
-use WebMoves\PluginBase\Contracts\Settings\SettingsProviderInterface;
+use WebMoves\PluginBase\Contracts\Settings\SettingsManager;
+use WebMoves\PluginBase\Contracts\Settings\SettingsProvider;
 
-abstract class AbstractSettingsProvider implements SettingsProviderInterface {
+abstract class AbstractSettingsProvider implements SettingsProvider {
 
-	private SettingsManagerInterface $settings_manager;
+	private SettingsManager $settings_manager;
 
 	public function __construct(string $scope)
 	{
-		$this->settings_manager = new SettingsManager($scope);
+		$this->settings_manager = new DefaultSettingsManager($scope);
 	}
 
-	public function settings(): SettingsManagerInterface
+	public function settings(): SettingsManager
 	{
 		return $this->settings_manager;
 	}

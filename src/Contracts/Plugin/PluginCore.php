@@ -1,16 +1,16 @@
 <?php
 
-namespace WebMoves\PluginBase\Contracts;
+namespace WebMoves\PluginBase\Contracts\Plugin;
 
 use DI\Container;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
-use WebMoves\PluginBase\Contracts\Components\ComponentManagerInterface;
-use WebMoves\PluginBase\Contracts\Configuration\ConfigurationManagerInterface;
-use WebMoves\PluginBase\Plugin\PluginMetadata;
+use WebMoves\PluginBase\Contracts\Components\Component;
+use WebMoves\PluginBase\Contracts\Components\ComponentManager;
+use WebMoves\PluginBase\Contracts\Configuration\Configuration;
 
-interface PluginCoreInterface
+
+interface PluginCore
 {
 	/**
 	 * Initialize the plugin
@@ -38,7 +38,7 @@ interface PluginCoreInterface
 
 	public function get_logger(?string $channel=null): LoggerInterface;
 
-	public function get_config(): ConfigurationManagerInterface;
+	public function get_config(): Configuration;
 
 
 	/**
@@ -49,7 +49,7 @@ interface PluginCoreInterface
 	public function get_container(): ContainerInterface;
 
 
-	public function get_component_manager(): ComponentManagerInterface;
+	public function get_component_manager(): ComponentManager;
 	
 
 

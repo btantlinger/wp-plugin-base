@@ -3,19 +3,19 @@
 namespace WebMoves\PluginBase\Components\Support;
 
 use WebMoves\PluginBase\Components\AbstractComponent;
-use WebMoves\PluginBase\Contracts\PluginCoreInterface;
+use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 use WebMoves\PluginBase\Enums\Lifecycle;
 
 class DependencyManager extends AbstractComponent {
 	
 	private array $plugin_dependencies;
 
-	private PluginCoreInterface $core;
+	private PluginCore $core;
 
 	private array $dependency_issues = [];
 
 	/**
-	 * @param PluginCoreInterface $core The plugin core instance
+	 * @param \WebMoves\PluginBase\Contracts\Plugin\PluginCore $core The plugin core instance
 	 * @param array $plugin_dependencies Associative array of dependent plugins where key is plugin path and value is either:
 	 *   - String: plugin name (for backward compatibility)
 	 *   - Array: ['name' => 'Plugin Name', 'min_version' => '1.0.0']
@@ -25,7 +25,7 @@ class DependencyManager extends AbstractComponent {
 	 *   'acf/acf.php' => 'Advanced Custom Fields'  // backward compatibility
 	 * ]
 	 */
-	public function __construct(PluginCoreInterface $core, array $plugin_dependencies = []) {
+	public function __construct(PluginCore $core, array $plugin_dependencies = []) {
 		parent::__construct();
 		$this->core = $core;
 		$deps = $this->core->get_config()->get('dependencies.required_plugins', [] );
@@ -46,7 +46,7 @@ class DependencyManager extends AbstractComponent {
 		}
 	}
 
-	public function get_plugin_core(): PluginCoreInterface {
+	public function get_plugin_core(): PluginCore {
 		return $this->core;
 	}
 

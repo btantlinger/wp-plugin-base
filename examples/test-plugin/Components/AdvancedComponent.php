@@ -6,9 +6,9 @@ use WebMoves\PluginBase\Concerns\Components\ComponentRegistration;
 use WebMoves\PluginBase\Concerns\Components\HasAction;
 use WebMoves\PluginBase\Concerns\Components\HasFilter;
 use WebMoves\PluginBase\Concerns\Components\HasShortcode;
-use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
+use WebMoves\PluginBase\Contracts\Components\Component;
 
-class AdvancedComponent implements ComponentInterface {
+class AdvancedComponent implements Component {
 
 	use ComponentRegistration;
 	use HasAction;

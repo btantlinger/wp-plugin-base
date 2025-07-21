@@ -2,7 +2,9 @@
 
 namespace WebMoves\PluginBase\Plugin;
 
-class PluginMetadata
+use WebMoves\PluginBase\Contracts\Plugin\PluginMetadata;
+
+class DefaultPluginMetadata implements PluginMetadata
 {
     private array $data;
     private string $plugin_file;
@@ -18,7 +20,6 @@ class PluginMetadata
         if (!function_exists('get_plugin_data')) {
             require_once ABSPATH . 'wp-admin/includes/plugin.php';
         }
-        
         $this->data = get_plugin_data($this->plugin_file, false, false);
     }
     
@@ -51,11 +52,7 @@ class PluginMetadata
     {
         return $this->data['Author'] ?? '';
     }
-    
-    public function get_database_version(): ?string
-    {
-        return $this->data['DatabaseVersion'] ?? null;
-    }
+
     
     public function get_plugin_uri(): string
     {

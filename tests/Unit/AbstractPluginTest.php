@@ -4,7 +4,7 @@ namespace WebMoves\PluginBase\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 use WebMoves\PluginBase\AbstractPlugin;
-use WebMoves\PluginBase\Contracts\PluginCoreInterface;
+use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 
 /**
  * Test case for the AbstractPlugin class
@@ -29,7 +29,7 @@ class AbstractPluginTest extends TestCase
         
         // Test get_core returns a valid core
         $core = $plugin->get_core();
-        $this->assertInstanceOf(PluginCoreInterface::class, $core);
+        $this->assertInstanceOf(PluginCore::class, $core);
         $this->assertEquals('1.0.0', $core->get_version());
         $this->assertEquals('mock-plugin', $core->get_text_domain());
     }

@@ -2,7 +2,7 @@
 
 namespace WebMoves\PluginBase\Contracts\Configuration;
 
-interface ConfigurationManagerInterface
+interface Configuration
 {
 	/**
 	 * Load configuration files

@@ -2,15 +2,15 @@
 
 namespace WebMoves\PluginBase\Components\Database;
 
-use WebMoves\PluginBase\Contracts\Components\ComponentInterface;
-use WebMoves\PluginBase\Contracts\DatabaseManagerInterface;
+use WebMoves\PluginBase\Contracts\Components\Component;
+use WebMoves\PluginBase\Contracts\Database\DatabaseManager;
 use WebMoves\PluginBase\Enums\Lifecycle;
 use Psr\Log\LoggerInterface;
 
-class DatabaseUninstaller implements ComponentInterface
+class DatabaseUninstaller implements Component
 {
     public function __construct(
-        private DatabaseManagerInterface $databaseManager,
+        private DatabaseManager $databaseManager,
         private LoggerInterface $logger,
         private bool $cleanupTables = false, // Safety flag - must be explicitly enabled
         private bool $cleanupOptions = true,  // Clean plugin options by default

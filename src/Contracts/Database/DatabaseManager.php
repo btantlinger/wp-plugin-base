@@ -1,8 +1,8 @@
 <?php
 
-namespace WebMoves\PluginBase\Contracts;
+namespace WebMoves\PluginBase\Contracts\Database;
 
-interface DatabaseManagerInterface {
+interface DatabaseManager {
 
 	/**
 	 * Register a table schema with optional metadata

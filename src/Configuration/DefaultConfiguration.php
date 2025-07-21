@@ -2,17 +2,17 @@
 
 namespace WebMoves\PluginBase\Configuration;
 
-use WebMoves\PluginBase\Contracts\Configuration\ConfigurationManagerInterface;
-use WebMoves\PluginBase\Contracts\PluginCoreInterface;
+use WebMoves\PluginBase\Contracts\Configuration\Configuration;
+use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 
-class ConfigurationManager implements ConfigurationManagerInterface
+class DefaultConfiguration implements Configuration
 {
 	private array $config = [];
 	private bool $loaded = false;
 	private string $plugin_path;
 	private string $framework_path;
 
-	public function __construct(PluginCoreInterface $core)
+	public function __construct(PluginCore $core)
 	{
 		$this->plugin_path = $core->get_plugin_base_dir();
 		$this->framework_path = dirname(__DIR__, 2); // Go up to plugin-base root

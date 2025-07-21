@@ -7,9 +7,7 @@ trait HasShortcode {
 	use TraitRegistrationHelper;
 
 	protected function register_has_shortcode(): void {
-
 		$this->ensure_component_registration();
-
 		add_shortcode(
 			$this->get_shortcode_tag(),
 			[$this, 'render_shortcode']

@@ -3,13 +3,13 @@
 namespace WebMoves\PluginBase\Components\Support;
 
 use WebMoves\PluginBase\Components\AbstractComponent;
-use WebMoves\PluginBase\Contracts\PluginCoreInterface;
+use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 use WebMoves\PluginBase\Enums\Lifecycle;
 
 class DependencyNotice extends AbstractComponent  {
 
 	private DependencyManager $dependency_manager;
-	private PluginCoreInterface $core;
+	private PluginCore $core;
 
 	private ?string $plugin_name = null;
 

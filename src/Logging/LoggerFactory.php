@@ -6,7 +6,7 @@ use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\ErrorLogHandler;
 use Psr\Log\LoggerInterface;
-use WebMoves\PluginBase\Contracts\Configuration\ConfigurationManagerInterface;
+use WebMoves\PluginBase\Contracts\Configuration\Configuration;
 
 class LoggerFactory
 {
@@ -14,7 +14,7 @@ class LoggerFactory
 
     private array $config;
 
-    public function __construct(ConfigurationManagerInterface $config, string $plugin_name)
+    public function __construct(Configuration $config, string $plugin_name)
     {
 		$this->config = $config->get('logging', $this->get_default_config());
 		$this->plugin_name = $plugin_name;

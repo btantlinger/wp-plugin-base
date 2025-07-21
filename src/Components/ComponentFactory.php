@@ -10,6 +10,7 @@ use WebMoves\PluginBase\Concerns\Components\HasCli;
 use WebMoves\PluginBase\Concerns\Components\HasFilter;
 use WebMoves\PluginBase\Concerns\Components\HasSchedule;
 use WebMoves\PluginBase\Concerns\Components\HasShortcode;
+use WebMoves\PluginBase\Enums\Lifecycle;
 
 
 class ComponentFactory
@@ -36,6 +37,11 @@ class ComponentFactory
 			protected function execute_command($args, $assoc_args): void {
 				call_user_func($this->handler, $args, $assoc_args);
 			}
+
+			public function register_on(): Lifecycle {
+				return Lifecycle::BOOTSTRAP;
+			}
+
 		};
 	}
 
@@ -59,6 +65,10 @@ class ComponentFactory
 			protected function get_schedule_recurrence(): string { return $this->schedule; }
 			protected function get_schedule_start_time(): int { return $this->start_time ?? time(); }
 			protected function execute_schedule(): void { call_user_func($this->handler); }
+
+			public function register_on(): Lifecycle {
+				return Lifecycle::BOOTSTRAP;
+			}
 		};
 	}
 
@@ -78,6 +88,10 @@ class ComponentFactory
 
 			protected function get_front_assets(): array { return $this->front_assets; }
 			protected function get_admin_assets(): array { return $this->admin_assets; }
+
+			public function register_on(): Lifecycle {
+				return Lifecycle::BOOTSTRAP;
+			}
 		};
 	}
 
@@ -112,6 +126,10 @@ class ComponentFactory
 			protected function get_action_accepted_args(): int {
 				return $this->accepted_args;
 			}
+
+			public function register_on(): Lifecycle {
+				return Lifecycle::BOOTSTRAP;
+			}
 		};
 	}
 
@@ -139,6 +157,10 @@ class ComponentFactory
 			public function execute_filter( ...$args ): mixed {
 				return call_user_func($this->callback, ...$args);
 			}
+
+			public function register_on(): Lifecycle {
+				return Lifecycle::BOOTSTRAP;
+			}
 		};
 	}
 
@@ -162,6 +184,10 @@ class ComponentFactory
 
 			protected function get_shortcode_tag(): string {
 				return $this->tag;
+			}
+
+			public function register_on(): Lifecycle {
+				return Lifecycle::BOOTSTRAP;
 			}
 		};
 	}
