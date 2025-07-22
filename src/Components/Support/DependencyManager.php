@@ -151,6 +151,6 @@ class DependencyManager extends AbstractComponent {
 	}
 
 	public function register_on(): Lifecycle {
-		return Lifecycle::BOOTSTRAP;
+		return Lifecycle::INIT;
 	}
 }
