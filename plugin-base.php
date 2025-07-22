@@ -21,17 +21,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Define plugin constants
-define('WM_PLUGIN_BASE_VERSION', '1.0.0');
-define('WM_PLUGIN_BASE_FILE', __FILE__);
-define('WM_PLUGIN_BASE_PATH', plugin_dir_path(__FILE__));
-define('WM_PLUGIN_BASE_URL', plugin_dir_url(__FILE__));
-
-
-
 // Load Composer autoloader
-require_once WM_PLUGIN_BASE_PATH . 'vendor/autoload.php';
-
+require_once plugin_dir_path(__FILE__) . 'vendor/autoload.php';
 
 \WebMoves\PluginBase\Examples\TestPlugin::init_plugin(__FILE__);
 
