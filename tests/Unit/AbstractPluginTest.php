@@ -3,11 +3,11 @@
 namespace WebMoves\PluginBase\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use WebMoves\PluginBase\AbstractPlugin;
+use WebMoves\PluginBase\Plugin;
 use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 
 /**
- * Test case for the AbstractPlugin class
+ * Test case for the Plugin class
  */
 class AbstractPluginTest extends TestCase
 {
@@ -20,7 +20,7 @@ class AbstractPluginTest extends TestCase
         $plugin = MockPlugin::init_plugin(__FILE__, '1.0.0', 'mock-plugin');
         
         // Assert that the plugin is initialized
-        $this->assertInstanceOf(AbstractPlugin::class, $plugin);
+        $this->assertInstanceOf(Plugin::class, $plugin);
         $this->assertInstanceOf(MockPlugin::class, $plugin);
         
         // Test get_instance returns the same instance
@@ -98,9 +98,9 @@ class AbstractPluginTest extends TestCase
 }
 
 /**
- * Mock implementation of AbstractPlugin for testing
+ * Mock implementation of Plugin for testing
  */
-class MockPlugin extends AbstractPlugin
+class MockPlugin extends Plugin
 {
     private static $initialized = false;
     
@@ -110,7 +110,7 @@ class MockPlugin extends AbstractPlugin
     public static function reset_instance(): void
     {
         // Use Reflection to access the private static property
-        $reflection = new \ReflectionClass(AbstractPlugin::class);
+        $reflection = new \ReflectionClass(Plugin::class);
         $instanceProperty = $reflection->getProperty('instance');
         $instanceProperty->setAccessible(true);
         $instanceProperty->setValue(null, null);

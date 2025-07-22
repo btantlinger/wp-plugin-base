@@ -44,12 +44,12 @@ The WordPress Plugin Base is designed to help developers create WordPress plugin
 
 The Plugin Base follows a service-based architecture with several key components:
 
-### 1. AbstractPlugin
+### 1. Plugin
 
 Base class for plugins, providing core functionality:
 - Singleton pattern with `init_plugin` and `get_instance` methods
 - Manages plugin core
-- Child classes override `initialize()` and `get_services()`
+- Can be extended by subclasses that override `initialize()` and `get_services()`
 
 ### 2. PluginCore
 
@@ -62,7 +62,7 @@ Manages the plugin's core functionality:
 
 ### 3. Plugin Metadata
 
-The Plugin Base now includes a PluginMetadata interface and DefaultPluginMetadata implementation for managing plugin metadata:
+The Plugin Base has a PluginMetadata interface and DefaultPluginMetadata implementation for managing plugin metadata:
 - Separates plugin metadata from the plugin core
 - Provides methods for accessing plugin information:
   - Name, version, text domain
@@ -75,11 +75,8 @@ The Plugin Base now includes a PluginMetadata interface and DefaultPluginMetadat
 
 ### 4. Configuration System
 
-The Plugin Base now includes a robust configuration system:
-- Loads configuration from multiple files in a specific order:
-  - Framework default config
-  - Plugin-specific config
-  - Environment-specific config
+The Plugin Base has a robust configuration system:
+- Loads configuration from the plugin.config.php file
 - Supports dot notation for accessing configuration values
 - Provides methods for getting, setting, and checking configuration values
 - Has specific methods for retrieving common configuration sections:
@@ -92,8 +89,6 @@ Example configuration file structure:
 ```
 /config
   /plugin.config.php       # Main configuration file
-  /plugin.development.php  # Environment-specific configuration
-  /plugin.production.php   # Environment-specific configuration
 ```
 
 Example configuration usage:
@@ -135,7 +130,7 @@ Modular functionality via traits:
 
 ### 7. Lifecycle Management
 
-The Plugin Base now includes a Lifecycle enum that defines different plugin lifecycle events:
+The Plugin Base has a Lifecycle enum that defines different plugin lifecycle events:
 
 1. Plugin management events:
    - INSTALL: When the plugin is first installed
@@ -149,11 +144,11 @@ The Plugin Base now includes a Lifecycle enum that defines different plugin life
    - ADMIN_INIT: Admin-specific initialization
    - READY: After everything is loaded (wp_loaded hook)
 
-Components can now be registered for specific lifecycle events by implementing the `register_on()` method.
+Components are registered for specific lifecycle events by implementing the `register_on()` method.
 
 ### 8. Component Registration
 
-The Plugin Base uses a component-based architecture where functionality is encapsulated in classes that implement the `ComponentInterface`. This interface defines four key methods:
+The Plugin Base uses a component-based architecture where functionality is encapsulated in classes that implement the `Component` interface. This interface defines four key methods:
 
 #### Component Interface Methods
 
@@ -180,7 +175,7 @@ The Plugin Base uses a component-based architecture where functionality is encap
 
 #### The ComponentRegistration Trait
 
-The Plugin Base provides a `ComponentRegistration` trait that simplifies component implementation:
+The Plugin Base includes a `ComponentRegistration` trait that simplifies component implementation:
 
 1. **Automatic Registration**: The trait provides a final implementation of the `register()` method required by `Component`, so you don't need to implement it yourself.
 
@@ -450,7 +445,7 @@ public function get_services(): array
 }
 ```
 
-> **Note:** Components returned as services in the `get_services()` method are automatically registered with the plugin core. There's no need to call `register_component()` explicitly for these components.
+> **Note:** Components returned as services in the `get_services()` method are automatically registered with the plugin core. There's no need to call `add()` explicitly for these components.
 
 This approach demonstrates the reusability of components:
 1. Each instance displays a different type of notice (info, warning, error)
@@ -472,43 +467,160 @@ Configuration files are stored in the `/config` directory:
 
 - **Main Configuration**: 
   - `/config/plugin.config.php` - Main configuration file
-  - `/config/plugin.{environment}.php` - Environment-specific configuration (development, production, etc.)
 
 - **Configuration Structure**:
   ```php
   // Example plugin.config.php
   return [
-      'plugin' => [
-          'name' => 'My Plugin',
-          'version' => '1.0.0',
-          'text_domain' => 'my-plugin',
-      ],
-      'services' => [
-          'my-service' => function() {
-              return new MyService();
-          },
-      ],
-      'components' => [
-          'my-component' => function() {
-              return new MyComponent();
-          },
-      ],
+      /*
+      |--------------------------------------------------------------------------
+      | Plugin Dependencies
+      |--------------------------------------------------------------------------
+      |
+      | Define the list of plugins that must be installed and activated
+      | for the plugin to function properly.
+      |
+      */
       'dependencies' => [
           'required_plugins' => [
-              [
-                  'name' => 'WooCommerce',
-                  'file' => 'woocommerce/woocommerce.php',
-                  'version' => '7.0.0',
-              ],
+              'woocommerce/woocommerce.php' => 'WooCommerce',
+              'advanced-custom-fields/acf.php' => 'Advanced Custom Fields',
           ],
       ],
+
+      /*
+      |--------------------------------------------------------------------------
+      | Services
+      |--------------------------------------------------------------------------
+      |
+      | Non-component services, utilities, data objects, API clients, etc.
+      | These are registered in the container but don't implement Component.
+      |
+      */
+      'services' => [
+          DatabaseManager::class => create(DefaultDatabaseManager::class)
+              ->constructor(
+                  get(PluginCore::class),
+                  get(Configuration::class)
+              ),
+          
+          SettingsManagerFactory::class => create(DefaultSettingsManagerFactory::class)
+              ->constructor(get(PluginMetadata::class)),
+          
+          TemplateRenderer::class => create(DefaultTemplateRenderer::class)
+              ->constructor(get(PluginCore::class)),
+          
+          // Logger Factory
+          LoggerFactory::class => create(LoggerFactory::class)
+              ->constructor(get(Configuration::class), get('plugin.name')),
+          
+          // Default logger
+          LoggerInterface::class => factory(function($container){
+              return $container->get(LoggerFactory::class)->create('default');
+          }),
+      ],
+
+      /*
+      |--------------------------------------------------------------------------
+      | Components
+      |--------------------------------------------------------------------------
+      |
+      | Components that implement Component and will be registered
+      | with the DefaultComponentManager for lifecycle management.
+      |
+      */
+      'components' => [
+          DependencyManager::class => create(DependencyManager::class)
+              ->constructor(get(PluginCore::class)),
+          
+          DependencyNotice::class => create(DependencyNotice::class)
+              ->constructor(get(DependencyManager::class)),
+          
+          DatabaseInstaller::class => create(DatabaseInstaller::class)
+              ->constructor(get(DatabaseManager::class), get(LoggerInterface::class)),
+      ],
+
+      /*
+      |--------------------------------------------------------------------------
+      | Logging Configuration
+      |--------------------------------------------------------------------------
+      */
       'logging' => [
           'channels' => [
               'default' => [
-                  'level' => 'info',
-                  'path' => 'logs/plugin.log',
+                  'handlers' => ['stream', 'error_log'],
+                  'processors' => [],
+              ],
+              'app' => [
+                  'handlers' => ['stream'],
+                  'processors' => [],
               ],
           ],
+          'handlers' => [
+              'stream' => [
+                  'class' => StreamHandler::class,
+                  'constructor' => [
+                      'stream' => WP_CONTENT_DIR . '/debug.log',
+                      'level' => Level::Debug,
+                  ],
+                  'formatter' => 'line',
+              ],
+              'error_log' => [
+                  'class' => ErrorLogHandler::class,
+                  'constructor' => [
+                      'messageType' => ErrorLogHandler::OPERATING_SYSTEM,
+                      'level' => Level::Error,
+                  ],
+                  'formatter' => 'line',
+              ],
+          ],
+          'formatters' => [
+              'line' => [
+                  'class' => LineFormatter::class,
+                  'constructor' => [
+                      'format' => "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n",
+                      'dateFormat' => 'Y-m-d H:i:s',
+                  ],
+              ],
+          ],
+      ],
+
+      /*
+      |--------------------------------------------------------------------------
+      | Database Configuration
+      |--------------------------------------------------------------------------
+      */
+      'database' => [
+          'version' => '1.0.1',
+          'delete_tables_on_uninstall' => true,
+          'delete_options_on_uninstall' => true,
+          'tables' => [
+              'plugin_settings' => "CREATE TABLE {table_name} (
+                  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                  setting_key varchar(191) NOT NULL,
+                  setting_value longtext,
+                  setting_group varchar(100) DEFAULT 'general',
+                  is_autoload tinyint(1) DEFAULT 0,
+                  created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                  PRIMARY KEY (id),
+                  UNIQUE KEY idx_setting_key_group (setting_key, setting_group),
+                  KEY idx_setting_group (setting_group),
+                  KEY idx_autoload (is_autoload)
+              ) {charset_collate};"
+          ]
+      ],
+
+      /*
+      |--------------------------------------------------------------------------
+      | Asset Configuration
+      |--------------------------------------------------------------------------
+      */
+      'assets' => [
+          'version_strategy' => 'file_time', // 'file_time', 'plugin_version', 'manual'
+          'minify_in_production' => true,
+          'combine_css' => false,
+          'combine_js' => false,
       ],
   ];
   ```
@@ -534,7 +646,7 @@ $this->core->get_config()->set('cache.ttl', 3600);
 
 To create a new plugin using this Plugin Base:
 
-1. Create a new class that extends `AbstractPlugin`
+1. Create a new class that extends `Plugin`
 2. Implement the `initialize()` method to set up your plugin
 3. Implement the `get_services()` method to register your services
 4. Call `YourPlugin::init_plugin(__FILE__)` in your main plugin file
@@ -572,12 +684,12 @@ Your plugin class:
 
 namespace YourNamespace;
 
-use WebMoves\PluginBase\AbstractPlugin;
+use WebMoves\PluginBase\Plugin;
 use WebMoves\PluginBase\Settings\MenuAdminPage;
 use WebMoves\PluginBase\Settings\SettingsPage;
 use WebMoves\PluginBase\Settings\DefaultSettingsBuilder;
 
-class YourPlugin extends AbstractPlugin
+class YourPlugin extends Plugin
 {
     public function initialize(): void
     {

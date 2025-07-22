@@ -2,11 +2,11 @@
 
 namespace WebMoves\PluginBase\Examples;
 
-use WebMoves\PluginBase\AbstractPlugin;
+use WebMoves\PluginBase\Plugin;
 use WebMoves\PluginBase\Examples\Settings\MainPage;
 use WebMoves\PluginBase\Examples\Settings\TestSettingsPage;
 
-class TestPlugin extends AbstractPlugin
+class TestPlugin extends Plugin
 {
     public function initialize(): void
     {
