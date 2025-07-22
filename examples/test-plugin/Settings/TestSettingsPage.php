@@ -16,8 +16,8 @@ class TestSettingsPage extends SettingsPage {
 			"test_plugin_settings",
 			"test-plugin-settings",
 			[
-				new DemoSettingsProvider($factory->create('test_plugin_demo_settings')),
-				new ApiSettingsProvider($factory->create('test_plugin_api_settings')),
+				new DemoSettingsProvider($factory->create('test_plugin_demo_settings'), $core->get_metadata()),
+				new ApiSettingsProvider($factory->create('test_plugin_api_settings'), $core->get_metadata()),
 			]
 		);
 		parent::__construct($builder, $pageTitle, $menuTitle, $parent_slug);
