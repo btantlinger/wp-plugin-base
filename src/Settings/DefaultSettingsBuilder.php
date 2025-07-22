@@ -22,6 +22,7 @@ class DefaultSettingsBuilder extends AbstractSettingBuilder
 	}
 
 
+
 	protected function render_default_page(): void
 	{
 		echo '<form method="post" action="options.php">';

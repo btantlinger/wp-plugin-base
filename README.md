@@ -686,7 +686,7 @@ namespace YourNamespace;
 
 use WebMoves\PluginBase\PluginBase;
 use WebMoves\PluginBase\Settings\MenuAdminPage;
-use WebMoves\PluginBase\Settings\SettingsPage;
+use WebMoves\PluginBase\Settings\AbstractSettingsPage;
 use WebMoves\PluginBase\Settings\DefaultSettingsBuilder;
 
 class YourPlugin extends PluginBase
@@ -717,7 +717,7 @@ class YourPlugin extends PluginBase
             MenuAdminPage::class => new MenuAdminPage($plugin_slug, 'Your Plugin', 'Your Plugin'),
             
             // Settings page as submenu
-            SettingsPage::class => new SettingsPage(
+            AbstractSettingsPage::class => new AbstractSettingsPage(
                 $builder,
                 'Your Plugin Settings',
                 'Settings',
@@ -849,7 +849,7 @@ new MenuAdminPage(
 To create a settings page that displays and manages plugin settings:
 
 ```php
-use WebMoves\PluginBase\Settings\SettingsPage;
+use WebMoves\PluginBase\Settings\AbstractSettingsPage;
 use WebMoves\PluginBase\Settings\DefaultSettingsBuilder;
 
 // In your plugin's get_services() method
@@ -873,7 +873,7 @@ public function get_services(): array
         MenuAdminPage::class => new MenuAdminPage($plugin_slug, 'My Plugin', 'My Plugin'),
         
         // Settings page as submenu
-        SettingsPage::class => new SettingsPage(
+        AbstractSettingsPage::class => new AbstractSettingsPage(
             $builder,                  // Settings builder
             'My Plugin Settings',      // Page title
             'Settings',                // Menu title

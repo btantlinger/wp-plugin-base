@@ -4,7 +4,7 @@ namespace WebMoves\PluginBase\Examples;
 
 use WebMoves\PluginBase\PluginBase;
 use WebMoves\PluginBase\Examples\Settings\MainPage;
-use WebMoves\PluginBase\Examples\Settings\TestSettingsPage;
+use WebMoves\PluginBase\Examples\Settings\TestAbstractSettingsPage;
 
 class TestPlugin extends PluginBase
 {
@@ -17,8 +17,8 @@ class TestPlugin extends PluginBase
 	public function get_services(): array {
 		$plugin_slug = 'test-plugin-base';
 		return [
-			MainPage::class => new MainPage($plugin_slug, "Test Plugin Base", "Test Plugin"),
-			TestSettingsPage::class => new TestSettingsPage($this->get_core(), 'Test Plugin Base Settings', 'Settings', $plugin_slug),
+			MainPage::class  => new MainPage($this->get_core(), $plugin_slug, "Test Plugin Base", "Test Plugin"),
+			TestAbstractSettingsPage::class => new TestAbstractSettingsPage($this->get_core(), 'Test Plugin Base Settings', 'Settings', $plugin_slug),
 		];
 	}
 }
