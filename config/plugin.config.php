@@ -45,8 +45,7 @@ return [
 	*/
 	'dependencies' => [
 		'required_plugins' => [
-			'woocommerce/woocommerce.php' => 'WooCommerce',
-			'advanced-custom-fields/acf.php' => 'Advanced Custom Fields',
+
 		],
 	],
 
@@ -207,7 +206,8 @@ return [
 		'delete_tables_on_uninstall' => true,
 		'delete_options_on_uninstall' => true,
 		'tables' => [
-			'user_activity_log' => "CREATE TABLE {table_name} (
+
+/*			'user_activity_log' => "CREATE TABLE {table_name} (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             user_id bigint(20) unsigned NOT NULL,
             activity_type varchar(50) NOT NULL,
@@ -234,21 +234,9 @@ return [
             KEY idx_setting_group (setting_group),
             KEY idx_autoload (is_autoload)
         ) {charset_collate};"
+*/
 		]
 	],
 
-	/*
-	|--------------------------------------------------------------------------
-	| Asset Configuration
-	|--------------------------------------------------------------------------
-	|
-	| Configuration for asset loading, versioning, and optimization.
-	|
-	*/
-	'assets' => [
-		'version_strategy' => 'file_time', // 'file_time', 'plugin_version', 'manual'
-		'minify_in_production' => true,
-		'combine_css' => false,
-		'combine_js' => false,
-	],
+
 ];

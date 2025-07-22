@@ -1,4 +1,4 @@
-# WordPress Plugin Base
+# Web Moves Plugin Base
 
 >
 > **⚠️Please Note: This library is currently in early development and is NOT suitable for production use.**
@@ -11,7 +11,7 @@ A modern WordPress plugin base that provides a solid foundation for creating wel
 
 ## Overview
 
-The WordPress Plugin Base is designed to help developers create WordPress plugins with:
+Web Moves Plugin Base is designed to help developers create WordPress plugins with:
 
 - **Clean Architecture**: Separation of concerns and modular design
 - **Modern PHP Practices**: Type safety, dependency injection, and PSR standards
@@ -44,7 +44,7 @@ The WordPress Plugin Base is designed to help developers create WordPress plugin
 
 The Plugin Base follows a service-based architecture with several key components:
 
-### 1. Plugin
+### 1. PluginBase
 
 Base class for plugins, providing core functionality:
 - Singleton pattern with `init_plugin` and `get_instance` methods
@@ -684,12 +684,12 @@ Your plugin class:
 
 namespace YourNamespace;
 
-use WebMoves\PluginBase\Plugin;
+use WebMoves\PluginBase\PluginBase;
 use WebMoves\PluginBase\Settings\MenuAdminPage;
 use WebMoves\PluginBase\Settings\SettingsPage;
 use WebMoves\PluginBase\Settings\DefaultSettingsBuilder;
 
-class YourPlugin extends Plugin
+class YourPlugin extends PluginBase
 {
     public function initialize(): void
     {

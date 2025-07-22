@@ -62,14 +62,14 @@ use WebMoves\PluginBase\Plugin\DefaultPluginCore;
  * @package WebMoves\PluginBase
  * @since 1.0.0
  */
-class Plugin {
+class PluginBase {
 
 	/**
 	 * Singleton instance
 	 * 
-	 * @var Plugin|null
+	 * @var PluginBase|null
 	 */
-	private static ?Plugin $instance = null;
+	private static ?PluginBase $instance = null;
 
 	/**
 	 * The plugin core instance that handles lifecycle management

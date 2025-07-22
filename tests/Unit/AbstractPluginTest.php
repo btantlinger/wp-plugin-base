@@ -3,7 +3,7 @@
 namespace WebMoves\PluginBase\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use WebMoves\PluginBase\Plugin;
+use WebMoves\PluginBase\PluginBase;
 use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 
 /**
@@ -17,14 +17,14 @@ class AbstractPluginTest extends TestCase
     public function testInitPlugin()
     {
         // Create a mock plugin implementation
-        $plugin = MockPlugin::init_plugin(__FILE__, '1.0.0', 'mock-plugin');
+        $plugin = MockPluginBase::init_plugin(__FILE__, '1.0.0', 'mock-plugin');
         
         // Assert that the plugin is initialized
-        $this->assertInstanceOf(Plugin::class, $plugin);
-        $this->assertInstanceOf(MockPlugin::class, $plugin);
+        $this->assertInstanceOf(PluginBase::class, $plugin);
+        $this->assertInstanceOf(MockPluginBase::class, $plugin);
         
         // Test get_instance returns the same instance
-        $instance = MockPlugin::get_instance();
+        $instance = MockPluginBase::get_instance();
         $this->assertSame($plugin, $instance);
         
         // Test get_core returns a valid core
@@ -43,13 +43,13 @@ class AbstractPluginTest extends TestCase
         $this->expectExceptionMessage('Plugin already initialized');
         
         // Reset the MockPlugin instance
-        MockPlugin::reset_instance();
+        MockPluginBase::reset_instance();
         
         // Initialize once
-        MockPlugin::init_plugin(__FILE__, '1.0.0');
+        MockPluginBase::init_plugin(__FILE__, '1.0.0');
         
         // Initialize again - should throw exception
-        MockPlugin::init_plugin(__FILE__, '1.0.0');
+        MockPluginBase::init_plugin(__FILE__, '1.0.0');
     }
     
     /**
@@ -61,10 +61,10 @@ class AbstractPluginTest extends TestCase
         $this->expectExceptionMessage('Plugin not initialized');
         
         // Reset the MockPlugin instance
-        MockPlugin::reset_instance();
+        MockPluginBase::reset_instance();
         
         // Try to get instance before initialization
-        MockPlugin::get_instance();
+        MockPluginBase::get_instance();
     }
     
     /**
@@ -73,10 +73,10 @@ class AbstractPluginTest extends TestCase
     public function testServiceRegistration()
     {
         // Reset the MockPlugin instance
-        MockPlugin::reset_instance();
+        MockPluginBase::reset_instance();
         
         // Initialize with a test service
-        $plugin = MockPlugin::init_plugin(__FILE__, '1.0.0');
+        $plugin = MockPluginBase::init_plugin(__FILE__, '1.0.0');
         
         // Check if the service was registered
         $core = $plugin->get_core();
@@ -91,7 +91,7 @@ class AbstractPluginTest extends TestCase
     protected function tearDown(): void
     {
         // Reset the MockPlugin instance
-        MockPlugin::reset_instance();
+        MockPluginBase::reset_instance();
         
         parent::tearDown();
     }
@@ -100,7 +100,7 @@ class AbstractPluginTest extends TestCase
 /**
  * Mock implementation of Plugin for testing
  */
-class MockPlugin extends Plugin
+class MockPluginBase extends PluginBase
 {
     private static $initialized = false;
     
@@ -110,7 +110,7 @@ class MockPlugin extends Plugin
     public static function reset_instance(): void
     {
         // Use Reflection to access the private static property
-        $reflection = new \ReflectionClass(Plugin::class);
+        $reflection = new \ReflectionClass(PluginBase::class);
         $instanceProperty = $reflection->getProperty('instance');
         $instanceProperty->setAccessible(true);
         $instanceProperty->setValue(null, null);
