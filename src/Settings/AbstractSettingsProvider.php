@@ -6,6 +6,7 @@ use WebMoves\PluginBase\Contracts\Plugin\PluginMetadata;
 use WebMoves\PluginBase\Contracts\Settings\SettingsManager;
 use WebMoves\PluginBase\Contracts\Settings\SettingsManagerFactory;
 use WebMoves\PluginBase\Contracts\Settings\SettingsProvider;
+use WebMoves\PluginBase\Enums\Lifecycle;
 
 abstract class AbstractSettingsProvider implements SettingsProvider {
 
@@ -28,5 +29,20 @@ abstract class AbstractSettingsProvider implements SettingsProvider {
 	public function get_plugin_metadata(): PluginMetadata
 	{
 		return $this->metadata;
+	}
+
+	public function register_on(): Lifecycle {
+		return Lifecycle::INIT;
+	}
+
+	public function register(): void {
+	}
+
+	public function get_priority(): int {
+		return 5;
+	}
+
+	public function can_register(): bool {
+		return true;
 	}
 }
