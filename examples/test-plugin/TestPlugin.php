@@ -6,7 +6,7 @@ use WebMoves\PluginBase\PluginBase;
 use WebMoves\PluginBase\Examples\Settings\MainPage;
 use WebMoves\PluginBase\Examples\Settings\TestSettingsPage;
 
-class TestPluginBase extends PluginBase
+class TestPlugin extends PluginBase
 {
     public function initialize(): void
     {
