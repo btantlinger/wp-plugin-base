@@ -26,7 +26,7 @@ abstract class AbstractSettingBuilder implements SettingsBuilder
 	{
 		$this->settingsGroup = $settingsGroup;
 		$this->page = $page;
-		$this->text_domain = $core->get_text_domain();
+		$this->text_domain = $core->get_metadata()->get_text_domain();
 		$this->logger = $core->get_logger('app');
 		$this->flash = new DefaultFlashData($page);
 		$this->providers = $settings_providers;

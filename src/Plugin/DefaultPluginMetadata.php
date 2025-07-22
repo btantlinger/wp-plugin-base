@@ -22,8 +22,18 @@ class DefaultPluginMetadata implements PluginMetadata
         }
         $this->data = get_plugin_data($this->plugin_file, false, false);
     }
-    
-    public function get_name(): string
+
+	/**
+	 * Get the unified prefix for this plugin
+	 * Based on plugin slug, safe for WordPress usage
+	 */
+	public function get_prefix(): string
+	{
+		return sanitize_key($this->get_plugin_slug()) . '_';
+	}
+
+
+	public function get_name(): string
     {
         return $this->data['Name'] ?? $this->plugin_file;
     }

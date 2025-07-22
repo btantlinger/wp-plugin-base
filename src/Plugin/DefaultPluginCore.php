@@ -59,26 +59,6 @@ class DefaultPluginCore implements PluginCore
     }
 
     /**
-     * Extract plugin name from file path or use default
-     *
-     * @param string $plugin_file
-     * @return string
-     */
-    private function extract_plugin_name(string $plugin_file): string
-    {
-        $plugin_dir = dirname($plugin_file);
-        $plugin_name = basename($plugin_dir);
-        
-        // If we're in the plugins directory, use the directory name
-        if (strpos($plugin_dir, 'plugins') !== false) {
-            return $plugin_name;
-        }
-
-        // Fallback to 'plugin-base'
-        return 'plugin-base';
-    }
-
-    /**
      * Initialize the plugin
      *
      * @return void
@@ -160,33 +140,28 @@ class DefaultPluginCore implements PluginCore
 	 */
 	public static function handle_uninstall(): void
 	{
-		// Get plugin info from the calling file
-		$plugin_file = WP_UNINSTALL_PLUGIN ? WP_UNINSTALL_PLUGIN : '';
+		// Safety check - only run during actual WordPress uninstall
+		if (!defined('WP_UNINSTALL_PLUGIN')) {
+			return;
+		}
+
+		// Get plugin info from the calling context
+		$plugin_file = WP_UNINSTALL_PLUGIN;
 		if (empty($plugin_file)) {
 			return;
 		}
 
-		// We need to recreate the plugin instance for uninstall
-		// This is a limitation of WordPress uninstall hooks - they run in isolation
 		try {
-			// Try to get plugin data to recreate instance
-			if (!function_exists('get_plugin_data')) {
-				require_once ABSPATH . 'wp-admin/includes/plugin.php';
-			}
-
-			$plugin_data = get_plugin_data($plugin_file);
-			$version = $plugin_data['Version'] ?? '1.0.0';
-			$text_domain = $plugin_data['TextDomain'] ?? null;
-
-			// Create temporary instance for uninstall
+			// Create instance normally (not "temporary" - this is the real uninstall)
 			$instance = new self($plugin_file);
+
 			$instance->on_lifecycle(Lifecycle::UNINSTALL);
 
-			// Clean up installation marker
+
+			// Clean up any plugin-level options
 			delete_option($instance->get_installation_option_key());
 
 		} catch (\Exception $e) {
-			// Log error if possible, but don't break uninstall
 			error_log("Plugin uninstall error: " . $e->getMessage());
 		}
 	}
@@ -197,7 +172,7 @@ class DefaultPluginCore implements PluginCore
 	 */
 	private function get_installation_option_key(): string
 	{
-		return sanitize_key( $this->get_plugin_name() . '_installed');
+		return sanitize_key( $this->metadata->get_prefix() . 'installed');
 	}
 
 
@@ -217,7 +192,7 @@ class DefaultPluginCore implements PluginCore
         $this->initialize_components_for_lifecycle($lifecycle);
 
         // Fire custom hook for extensibility
-        $hook = $this->get_hook_prefix() . '_' . $lifecycle->value;
+        $hook = $this->get_metadata()->get_prefix() . $lifecycle->value;
         do_action($hook, $this, $lifecycle);
     }
 
@@ -343,10 +318,6 @@ class DefaultPluginCore implements PluginCore
         $this->get_logger()->info( $this->get_plugin_name() . ' on_plugins_loaded', [ 'version' => $this->get_version()]);
     }
 
-    public function get_hook_prefix(): string
-    {
-        return sanitize_title_with_dashes($this->get_plugin_name());
-    }
 
     public function get_logger(?string $channel=null): LoggerInterface
     {

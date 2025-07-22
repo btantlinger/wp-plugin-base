@@ -46,7 +46,7 @@ class DefaultSettingsBuilder extends AbstractSettingBuilder
 		// Build attributes
 		$attributes = $field['attributes'] ?? [];
 		if (!empty($field['required'])) {
-			//$attributes['required'] = 'required';
+			$attributes['required'] = 'required';
 		}
 
 		$attribute_string = $this->build_attribute_string($attributes);
@@ -73,8 +73,11 @@ class DefaultSettingsBuilder extends AbstractSettingBuilder
 		}
 
 		if (!empty($field['description'])) {
-			$tag = $field['type'] == 'checkbox' ? 'span' : 'p';
-			echo '<' . $tag . ' class="description">' . esc_html($field['description']) . '<' . $tag . '/>';
+			if($field['type'] == 'checkbox') {
+				echo '<label for="' .$field_name. '" class="description">' . esc_html($field['description']) . '</label>';
+			} else {
+				echo '<p class="description">' . esc_html($field['description']) . '<p/>';
+			}
 		}
 	}
 

@@ -142,10 +142,10 @@ class DefaultDatabaseManager implements DatabaseManager
     public function __construct(PluginCore $core, Configuration $config)
     {
         $this->core = $core;
-
+		$meta = $this->core->get_metadata();
         $this->version = $config->get('database.version', '1.0.0');
-        $this->plugin_name = $core->get_plugin_name();
-        $this->hook_prefix = $core->get_hook_prefix();
+        $this->plugin_name = $meta->get_name();
+        $this->hook_prefix = $meta->get_prefix();
         $this->version_option_name = $this->generate_version_option_name($this->plugin_name);
         $this->logger = $core->get_logger('database');
 		
@@ -368,7 +368,7 @@ class DefaultDatabaseManager implements DatabaseManager
             ]);
 
             // Fire pre-upgrade action
-            do_action($this->hook_prefix . '_database_upgrade_start', $old_version, $this->version, $this->core);
+            do_action($this->hook_prefix . 'database_upgrade_start', $old_version, $this->version, $this->core);
 
             // Always run dbDelta to ensure tables are up to date
             $this->create_tables();
@@ -385,7 +385,7 @@ class DefaultDatabaseManager implements DatabaseManager
             self::$is_current_cached = true;
 
             // Fire post-upgrade action for external integrations
-            do_action($this->hook_prefix . '_database_upgrade_complete', $old_version, $this->version, $this->core);
+            do_action($this->hook_prefix . 'database_upgrade_complete', $old_version, $this->version, $this->core);
 
             $duration = microtime(true) - $start_time;
             
@@ -411,7 +411,7 @@ class DefaultDatabaseManager implements DatabaseManager
             ]);
             
             // Fire error action
-            do_action($this->hook_prefix . '_database_upgrade_failed', $old_version, $this->version, $e, $this->core);
+            do_action($this->hook_prefix . 'database_upgrade_failed', $old_version, $this->version, $e, $this->core);
             
             throw $e;
         }
@@ -434,14 +434,14 @@ class DefaultDatabaseManager implements DatabaseManager
         ]);
 
         // Fire a general upgrade action with version info
-        do_action($this->hook_prefix . '_database_upgrade', $old_version, $this->version, $this->core);
+        do_action($this->hook_prefix . 'database_upgrade', $old_version, $this->version, $this->core);
 
         // Fire version-specific actions for each version between old and new
         $versions_to_process = $this->get_versions_between($old_version, $this->version);
         
         foreach ($versions_to_process as $version) {
             $sanitized_version = str_replace('.', '_', $version);
-            $action_name = $this->hook_prefix . '_database_upgrade_to_' . $sanitized_version;
+            $action_name = $this->hook_prefix . 'database_upgrade_to_' . $sanitized_version;
             
             $this->logger->debug("Firing version-specific action: {$action_name}");
             

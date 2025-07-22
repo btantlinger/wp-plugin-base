@@ -5,6 +5,7 @@ use Monolog\Handler\ErrorLogHandler;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Level;
 use Psr\Log\LoggerInterface;
+use WebMoves\PluginBase\Components\Database\DatabaseUninstaller;
 use WebMoves\PluginBase\Components\Support\TextDomainLoader;
 use WebMoves\PluginBase\Contracts\Database\DatabaseManager;
 use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
@@ -72,16 +73,17 @@ return [
 			),
 		//ComponentManager::class => create(DefaultComponentManager::class),
 
-		SettingsManagerFactory::class => create(DefaultSettingsManagerFactory::class),
-		TemplateRenderer::class       => create(DefaultTemplateRenderer::class)
+		SettingsManagerFactory::class => create(DefaultSettingsManagerFactory::class)
+			->constructor(get(PluginMetadata::class)),
+		TemplateRenderer::class => create(DefaultTemplateRenderer::class)
 			->constructor(get(PluginCore::class)),
 
 		// Logger Factory
-		LoggerFactory::class          => create(LoggerFactory::class)
+		LoggerFactory::class => create(LoggerFactory::class)
 			->constructor(get(Configuration::class), get('plugin.name')),
 
 		// Default logger (for backward compatibility)
-		LoggerInterface::class        => factory(function($container){
+		LoggerInterface::class => factory(function($container){
 			return $container->get(LoggerFactory::class)->create('default');
 		}),
 		"logger.default" => factory(function($container){
@@ -114,12 +116,17 @@ return [
 			->constructor(get(PluginCore::class)),
 		DependencyNotice::class => create(DependencyNotice::class)
 			->constructor(get(DependencyManager::class)),
-
 		DatabaseInstaller::class => create(DatabaseInstaller::class)
 			->constructor(get(DatabaseManager::class), get(LoggerInterface::class)),
 		DatabaseVersionChecker::class => create(DatabaseVersionChecker::class)
 			->constructor(get(DatabaseManager::class), get(LoggerInterface::class)),
-
+		DatabaseUninstaller::class => create( DatabaseUninstaller::class)
+			->constructor(
+				get(DatabaseManager::class),
+				get(PluginMetadata::class),
+				get(Configuration::class),
+				get(LoggerInterface::class)
+			),
 		TextDomainLoader::class => create( TextDomainLoader::class)->constructor(get( PluginMetadata::class)),
 	],
 
@@ -197,6 +204,8 @@ return [
 	*/
 	'database' => [
 		'version' => '1.0.1',
+		'delete_tables_on_uninstall' => true,
+		'delete_options_on_uninstall' => true,
 		'tables' => [
 			'user_activity_log' => "CREATE TABLE {table_name} (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,

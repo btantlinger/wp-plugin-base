@@ -6,7 +6,6 @@ use WebMoves\PluginBase\Settings\AbstractAdminPage;
 
 
 class MainPage extends AbstractAdminPage {
-
 	protected function render_admin_page(): void {
 		echo '<div class="wrap">';
 		echo '<h1>' . esc_html(get_admin_page_title()) . "</h1>";

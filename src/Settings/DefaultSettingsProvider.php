@@ -2,13 +2,15 @@
 
 namespace WebMoves\PluginBase\Settings;
 
-use WebMoves\PluginBase\Settings\AbstractSettingsProvider;
+use WebMoves\PluginBase\Contracts\Settings\SettingsManagerFactory;
+use WebMoves\PluginBase\Contracts\Settings\SettingsManager;
 
 class DefaultSettingsProvider extends AbstractSettingsProvider {
 
 	private array $settings_configuration;
-	public function __construct(string $scope, array $settings_configuration) {
-		parent::__construct($scope);
+
+	public function __construct(SettingsManager $settings_manager,  array $settings_configuration) {
+		parent::__construct($settings_manager);
 		$this->settings_configuration = $settings_configuration;
 	}
 

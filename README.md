@@ -48,24 +48,76 @@ The Plugin Base follows a service-based architecture with several key components
 
 Base class for plugins, providing core functionality:
 - Singleton pattern with `init_plugin` and `get_instance` methods
-- Manages plugin core and database
+- Manages plugin core
 - Child classes override `initialize()` and `get_services()`
 
 ### 2. PluginCore
 
 Manages the plugin's core functionality:
-- Loads configuration and dependencies
+- Loads configuration
 - Provides service container functionality
 - Handles plugin lifecycle events
+- Manages components
+- Provides access to plugin metadata
 
-### 3. Settings
+### 3. Plugin Metadata
+
+The Plugin Base now includes a PluginMetadata interface and DefaultPluginMetadata implementation for managing plugin metadata:
+- Separates plugin metadata from the plugin core
+- Provides methods for accessing plugin information:
+  - Name, version, text domain
+  - Description, author, URIs
+  - Required WordPress and PHP versions
+  - Required plugins
+  - Plugin file paths and slugs
+- Makes it easier to access plugin information throughout the codebase
+- Available for dependency injection
+
+### 4. Configuration System
+
+The Plugin Base now includes a robust configuration system:
+- Loads configuration from multiple files in a specific order:
+  - Framework default config
+  - Plugin-specific config
+  - Environment-specific config
+- Supports dot notation for accessing configuration values
+- Provides methods for getting, setting, and checking configuration values
+- Has specific methods for retrieving common configuration sections:
+  - Required plugins
+  - Services
+  - Components
+  - Logging configuration
+
+Example configuration file structure:
+```
+/config
+  /plugin.config.php       # Main configuration file
+  /plugin.development.php  # Environment-specific configuration
+  /plugin.production.php   # Environment-specific configuration
+```
+
+Example configuration usage:
+```php
+// Get a configuration value
+$apiKey = $this->core->get_config()->get('api.key', 'default_key');
+
+// Check if a configuration value exists
+if ($this->core->get_config()->has('feature.enabled')) {
+    // Do something
+}
+
+// Set a configuration value at runtime
+$this->core->get_config()->set('cache.ttl', 3600);
+```
+
+### 5. Settings
 
 Manages plugin settings:
-- `AbstractSettingBuilder`: Base class for settings builders
 - `SettingsProvider`: Interface for providing settings configurations
-- `FieldValidators`: Provides validation for settings fields
+- `SettingsManager`: Interface for managing settings operations
+- `AbstractSettingsProvider`: Base class for settings providers
 
-### 4. Components
+### 6. Components
 
 Modular functionality via traits:
 - `HasAction`: WordPress action hooks
@@ -81,11 +133,29 @@ Modular functionality via traits:
 - `HasShortcode`: Shortcode functionality
 - `HasWidget`: Widget functionality
 
-### 5. Component Registration
+### 7. Lifecycle Management
 
-The Plugin Base uses a component-based architecture where functionality is encapsulated in classes that implement the `ComponentInterface`. This interface defines three key methods:
+The Plugin Base now includes a Lifecycle enum that defines different plugin lifecycle events:
 
-#### ComponentInterface Methods
+1. Plugin management events:
+   - INSTALL: When the plugin is first installed
+   - ACTIVATE: When the plugin is activated
+   - DEACTIVATE: When the plugin is deactivated
+   - UNINSTALL: When the plugin is uninstalled/deleted
+
+2. Runtime lifecycle events:
+   - BOOTSTRAP: Very early, before WordPress fully loads (plugins_loaded hook)
+   - INIT: Standard init hook
+   - ADMIN_INIT: Admin-specific initialization
+   - READY: After everything is loaded (wp_loaded hook)
+
+Components can now be registered for specific lifecycle events by implementing the `register_on()` method.
+
+### 8. Component Registration
+
+The Plugin Base uses a component-based architecture where functionality is encapsulated in classes that implement the `ComponentInterface`. This interface defines four key methods:
+
+#### Component Interface Methods
 
 - **`register()`**: This method is called when a component is being registered. It's where the component should set up its WordPress hooks, filters, and other initialization code. This is the main entry point for a component's functionality.
 
@@ -93,14 +163,18 @@ The Plugin Base uses a component-based architecture where functionality is encap
 
 - **`get_priority()`**: This method determines the order in which components are registered. Components with lower priority values are registered first. This is useful when certain components depend on others being registered first.
 
+- **`register_on()`**: This method determines which lifecycle event the component should be registered on. It returns a Lifecycle enum value.
+
 #### Component Registration Process
 
-1. Components are added to the `ComponentManager` via the `register_component()` method, either:
-   - Manually through `PluginCoreInterface::register_component()` method (e.g., `$plugin->get_core()->register_component(new MyComponent())`)
-   - Automatically when a service implementing `ComponentInterface` is added to the container with `PluginCore::set()`
+1. Components are added to the `ComponentManager` via the `add()` method, either:
+   - Manually through `PluginCoreInterface::get_component_manager()->add()` method
+   - Automatically when a service implementing `Component` is added to the container with `PluginCore::set()`
+   - Through configuration in the plugin.config.php file
 
-2. When `initialize_components()` is called (during WordPress's `plugins_loaded` hook), the `ComponentManager`:
-   - Sorts all registered components by priority
+2. When a lifecycle event occurs, the `ComponentManager`:
+   - Gets all components for that specific lifecycle
+   - Sorts them by priority
    - For each component, checks if it can be registered using `can_register()`
    - If `can_register()` returns true, calls the component's `register()` method
 
@@ -108,7 +182,7 @@ The Plugin Base uses a component-based architecture where functionality is encap
 
 The Plugin Base provides a `ComponentRegistration` trait that simplifies component implementation:
 
-1. **Automatic Registration**: The trait provides a final implementation of the `register()` method required by `ComponentInterface`, so you don't need to implement it yourself.
+1. **Automatic Registration**: The trait provides a final implementation of the `register()` method required by `Component`, so you don't need to implement it yourself.
 
 2. **Trait Discovery**: It automatically discovers all capability traits used by the component (like `HasAction`, `HasFilter`, etc.) and calls their registration methods.
 
@@ -133,6 +207,7 @@ This approach allows you to create components by combining traits for different 
 
 ```php
 use WebMoves\PluginBase\Contracts\Components\Component;
+use WebMoves\PluginBase\Enums\Lifecycle;
 
 class MyComponent implements Component
 {
@@ -154,6 +229,12 @@ class MyComponent implements Component
         // Standard priority
         return 10;
     }
+    
+    public function register_on(): Lifecycle
+    {
+        // Register on the INIT lifecycle
+        return Lifecycle::INIT;
+    }
    
     public function modify_content(string $content): string
     {
@@ -173,6 +254,7 @@ use WebMoves\PluginBase\Concerns\Components\ComponentRegistration;
 use WebMoves\PluginBase\Concerns\Components\HasAction;
 use WebMoves\PluginBase\Concerns\Components\HasShortcode;
 use WebMoves\PluginBase\Concerns\Components\HasFilter;
+use WebMoves\PluginBase\Enums\Lifecycle;
 
 class NoticeMessage implements Component {
 
@@ -192,6 +274,15 @@ class NoticeMessage implements Component {
         private array $shortcode_defaults = ['type' => 'info', 'dismissible' => 'true']
     ) {
         // Constructor property promotion automatically assigns parameters to properties
+    }
+    
+    /**
+     * Define which lifecycle event this component should register on
+     * Required by Component interface
+     */
+    public function register_on(): Lifecycle
+    {
+        return Lifecycle::ADMIN_INIT;
     }
     
     /**
@@ -373,23 +464,71 @@ The power of this design is that you can easily create multiple notice types wit
 
 ## Configuration
 
-The plugin uses a configuration directory structure for various settings:
+The plugin uses a configuration system for various settings:
 
 ### Configuration Files
 
 Configuration files are stored in the `/config` directory:
 
-- **Logging Configuration**: 
-  - `/config/monolog.php` or `/config/logging.php` - Configure logging settings
-  - The LoggerFactory looks for these files in multiple locations (plugin dir, current working dir, etc.)
+- **Main Configuration**: 
+  - `/config/plugin.config.php` - Main configuration file
+  - `/config/plugin.{environment}.php` - Environment-specific configuration (development, production, etc.)
 
-- **Core Dependencies**:
-  - `/config/core-dependencies.php` - Define core dependencies
-  - Additional configuration files are loaded in a specific order by PluginCore
+- **Configuration Structure**:
+  ```php
+  // Example plugin.config.php
+  return [
+      'plugin' => [
+          'name' => 'My Plugin',
+          'version' => '1.0.0',
+          'text_domain' => 'my-plugin',
+      ],
+      'services' => [
+          'my-service' => function() {
+              return new MyService();
+          },
+      ],
+      'components' => [
+          'my-component' => function() {
+              return new MyComponent();
+          },
+      ],
+      'dependencies' => [
+          'required_plugins' => [
+              [
+                  'name' => 'WooCommerce',
+                  'file' => 'woocommerce/woocommerce.php',
+                  'version' => '7.0.0',
+              ],
+          ],
+      ],
+      'logging' => [
+          'channels' => [
+              'default' => [
+                  'level' => 'info',
+                  'path' => 'logs/plugin.log',
+              ],
+          ],
+      ],
+  ];
+  ```
 
-- **Bundles**:
-  - `/config/bundles/` - Directory for bundle configurations
+### Accessing Configuration
 
+You can access configuration values using dot notation:
+
+```php
+// Get a configuration value
+$apiKey = $this->core->get_config()->get('api.key', 'default_key');
+
+// Check if a configuration value exists
+if ($this->core->get_config()->has('feature.enabled')) {
+    // Do something
+}
+
+// Set a configuration value at runtime
+$this->core->get_config()->set('cache.ttl', 3600);
+```
 
 ## Creating a New Plugin
 
@@ -398,7 +537,7 @@ To create a new plugin using this Plugin Base:
 1. Create a new class that extends `AbstractPlugin`
 2. Implement the `initialize()` method to set up your plugin
 3. Implement the `get_services()` method to register your services
-4. Call `YourPlugin::init_plugin(__FILE__, '1.0.0')` in your main plugin file
+4. Call `YourPlugin::init_plugin(__FILE__)` in your main plugin file
 
 Example:
 
@@ -423,7 +562,7 @@ if (!defined('ABSPATH')) {
 require_once plugin_dir_path(__FILE__) . 'vendor/autoload.php';
 
 // Initialize the plugin
-YourPlugin::init_plugin(__FILE__, '1.0.0');
+YourPlugin::init_plugin(__FILE__);
 ```
 
 Your plugin class:
@@ -482,11 +621,11 @@ class YourPlugin extends AbstractPlugin
 
 ## Features
 
-
 ### Dependency Injection
 
-The Plugin Base uses PHP-DI for dependency injection. Services should be registered with the container in the `get_services()` method of your plugin class:
+The Plugin Base uses PHP-DI for dependency injection. Services can be registered in three ways:
 
+1. In the `get_services()` method of your plugin class:
 ```php
 public function get_services(): array
 {
@@ -497,6 +636,23 @@ public function get_services(): array
         },
     ];
 }
+```
+
+2. In the configuration file:
+```php
+// config/plugin.config.php
+return [
+    'services' => [
+        MyService::class => function() {
+            return new MyService();
+        },
+    ],
+];
+```
+
+3. At runtime using the `set()` method:
+```php
+$this->core->set('my-service', new MyService());
 ```
 
 ### Settings Management
@@ -658,47 +814,13 @@ public function get_services(): array
 
 #### Admin Page Registration Process
 
-Admin pages implement the `ComponentInterface` and use the `HasAdminMenu` trait, which:
+Admin pages implement the `Component` interface and use the `HasAdminMenu` trait, which:
 
 1. Registers the page with WordPress during the `admin_menu` action
 2. Handles the rendering process with pre-render setup
 3. Manages page hooks and capabilities
 
 The `can_register()` method ensures pages are only registered in the admin area and when the user has the required capability.
-
-### Database Management
-
-Automated table creation and migrations:
-
-```php
-protected function get_database_tables(): array {
-    return [
-        'my_plugin_items' => "
-            CREATE TABLE {table_name} (
-                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-                name varchar(255) NOT NULL,
-                created_at datetime NOT NULL,
-                PRIMARY KEY (id)
-            ) {charset_collate};
-        ",
-    ];
-}
-
-protected function get_database_upgrade_callbacks(): array {
-    return [
-        function($old_version, $new_version) {
-            // Perform upgrade from old_version to new_version
-            if (version_compare($old_version, '1.1.0', '<')) {
-                // Add new column to table
-                global $wpdb;
-                $table_name = $wpdb->prefix . 'my_plugin_items';
-                $wpdb->query("ALTER TABLE {$table_name} ADD COLUMN status varchar(50) DEFAULT 'active'");
-            }
-        }
-    ];
-}
-```
-
 
 ## License
 

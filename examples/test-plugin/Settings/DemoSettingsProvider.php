@@ -2,10 +2,7 @@
 
 namespace WebMoves\PluginBase\Examples\Settings;
 
-use WebMoves\PluginBase\Contracts\Settings\SettingsProvider;
-use WebMoves\PluginBase\Contracts\Settings\SettingsManager;
 use WebMoves\PluginBase\Settings\AbstractSettingsProvider;
-use WebMoves\PluginBase\Settings\DefaultSettingsManager;
 
 class DemoSettingsProvider extends AbstractSettingsProvider
 {

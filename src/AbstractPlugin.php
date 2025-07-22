@@ -2,7 +2,7 @@
 
 namespace WebMoves\PluginBase;
 
-use WebMoves\PluginBase\Contracts\Database\DatabaseManager;
+
 use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 use WebMoves\PluginBase\Plugin\DefaultPluginCore;
 
@@ -12,7 +12,7 @@ abstract class AbstractPlugin {
 
 	protected PluginCore $core;
 
-	public static function init_plugin( string $plugin_file): static {
+	public static function init_plugin(string $plugin_file): static {
 		if(!is_null(static::$instance)) {
 			throw new \LogicException('Plugin already initialized');
 		}
@@ -37,9 +37,6 @@ abstract class AbstractPlugin {
 	private function __construct(PluginCore $core)
 	{
 		$this->core = $core;
-
-		// Initialize database manager if the plugin needs it
-		//$this->init_database();
 
 		$this->core->initialize();
 		$services = $this->get_services();

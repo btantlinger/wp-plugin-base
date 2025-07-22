@@ -3,19 +3,28 @@
 namespace WebMoves\PluginBase\Components\Database;
 
 use WebMoves\PluginBase\Contracts\Components\Component;
+use WebMoves\PluginBase\Contracts\Configuration\Configuration;
 use WebMoves\PluginBase\Contracts\Database\DatabaseManager;
+use WebMoves\PluginBase\Contracts\Plugin\PluginMetadata;
 use WebMoves\PluginBase\Enums\Lifecycle;
 use Psr\Log\LoggerInterface;
 
 class DatabaseUninstaller implements Component
 {
+	private bool $cleanupTables;
+	private bool $cleanupOptions;
+	private string $optionPrefix;
+
     public function __construct(
         private DatabaseManager $databaseManager,
-        private LoggerInterface $logger,
-        private bool $cleanupTables = false, // Safety flag - must be explicitly enabled
-        private bool $cleanupOptions = true,  // Clean plugin options by default
-        private string $optionPrefix = ''     // Plugin-specific option prefix
-    ) {}
+		private PluginMetadata $metadata,
+		private Configuration $config,
+        private LoggerInterface $logger
+    ) {
+		$this->cleanupTables = $this->config->get('delete_tables_on_uninstall', false);
+		$this->cleanupOptions = $this->config->get('delete_options_on_uninstall', true);
+		$this->optionPrefix = $this->metadata->get_prefix();
+    }
 
     public function register_on(): Lifecycle
     {
@@ -75,6 +84,6 @@ class DatabaseUninstaller implements Component
 
     public function get_priority(): int
     {
-        return 99; // Run last during uninstall
+        return 101; // Run last during uninstall
     }
 }

@@ -10,7 +10,6 @@ trait HasComponents
 	use TraitRegistrationHelper;
 	use PluginCoreHelper;
 
-
 	protected function register_has_components(): void
 	{
 		$this->ensure_component_registration();

@@ -12,6 +12,18 @@ use WebMoves\PluginBase\Contracts\Configuration\Configuration;
 
 interface PluginCore
 {
+
+	/**
+	 * Handle plugin uninstallation
+	 *
+	 * Called when plugin is being uninstalled/deleted from WordPress.
+	 * Should clean up any plugin data, settings, database tables etc.
+	 *
+	 * @return void
+	 */
+	public static function handle_uninstall(): void;
+
+
 	/**
 	 * Initialize the plugin
 	 *
@@ -36,8 +48,21 @@ interface PluginCore
 	 */
 	public function get(string $id);
 
-	public function get_logger(?string $channel=null): LoggerInterface;
 
+	/**
+	 * Get logger instance
+	 *
+	 * @param string|null $channel Optional logging channel
+	 *
+	 * @return LoggerInterface
+	 */
+	public function get_logger( ?string $channel = null ): LoggerInterface;
+
+	/**
+	 * Get configuration instance
+	 *
+	 * @return Configuration
+	 */
 	public function get_config(): Configuration;
 
 
@@ -49,8 +74,12 @@ interface PluginCore
 	public function get_container(): ContainerInterface;
 
 
+	/**
+	 * Get component manager instance
+	 *
+	 * @return ComponentManager
+	 */
 	public function get_component_manager(): ComponentManager;
-	
 
 
 	/**
@@ -79,7 +108,6 @@ interface PluginCore
 	public function get_plugin_name(): string;
 
 
-	public function get_hook_prefix(): string;
 	/**
 	 * Get plugin file path
 	 *
@@ -87,7 +115,17 @@ interface PluginCore
 	 */
 	public function get_plugin_file(): string;
 
+	/**
+	 * Get plugin text domain for translations
+	 *
+	 * @return string
+	 */
 	public function get_text_domain(): string;
 
+	/**
+	 * Get plugin metadata
+	 *
+	 * @return PluginMetadata
+	 */
 	public function get_metadata(): PluginMetadata;
 }

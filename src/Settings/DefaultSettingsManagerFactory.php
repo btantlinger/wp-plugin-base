@@ -2,6 +2,7 @@
 
 namespace WebMoves\PluginBase\Settings;
 
+use WebMoves\PluginBase\Contracts\Plugin\PluginMetadata;
 use WebMoves\PluginBase\Contracts\Settings\SettingsManagerFactory;
 use WebMoves\PluginBase\Contracts\Settings\SettingsManager;
 
@@ -11,51 +12,50 @@ use WebMoves\PluginBase\Contracts\Settings\SettingsManager;
 class DefaultSettingsManagerFactory implements SettingsManagerFactory
 {
 
-    /**
+	private PluginMetadata $metadata;
+
+	/**
+	 * @param PluginMetadata $metadata
+	 */
+	public function __construct(PluginMetadata $metadata) {
+		$this->metadata = $metadata;
+	}
+
+
+	/**
      * Create a DefaultSettingsManager instance with automatic prefix based on calling class
      *
      * @param object|string|null $context The class instance, class name, or null for auto-detection
      *
      * @return SettingsManager
      */
-    public function create(object|string|null $context = null ): SettingsManager
+    public function create(object|string $scope = null): SettingsManager
     {
-        $prefix = $this->generate_prefix($context);
+        $prefix = $this->generate_scope($scope);
         return new DefaultSettingsManager($prefix);
     }
 
-    /**
-     * Create a DefaultSettingsManager instance with explicit prefix
-     *
-     * @param string $prefix The prefix to use
-     *
-     * @return SettingsManager
-     */
-    public function create_with_prefix(string $prefix ): SettingsManager
-    {
-        return new DefaultSettingsManager($prefix);
-    }
+
 
     /**
      * Generate a prefix based on the given context
      *
-     * @param object|string|null $context The class instance, class name, or null for auto-detection
-     * @return string The generated prefix
+     * This implementation automatically prepends the scope with the metadata prefix
+     * E.g PluginMetadata->get_prefix() . $context
+     *
+     * @param object|string|null $context The class instance, class name, or string
+     * @return string The generated scope/prefix
      */
-    public function generate_prefix(object|string|null $context = null): string
+    public function generate_scope(object|string $context = null): string
     {
         if (is_string($context)) {
             // Explicit class name provided
-            return $this->class_name_to_prefix($context);
-        }
-        
-        if (is_object($context)) {
+            $context = $this->class_name_to_prefix($context);
+        } else if (is_object($context)) {
             // Object instance provided
-            return $this->class_name_to_prefix(get_class($context));
+            $context = $this->class_name_to_prefix(get_class($context));
         }
-        
-        // Auto-detect from backtrace
-        return $this->detect_prefix_from_backtrace();
+		return $this->metadata->get_prefix() . $context;
     }
 
     /**
@@ -73,24 +73,5 @@ class DefaultSettingsManagerFactory implements SettingsManagerFactory
         
         // Ensure WordPress-safe
         return sanitize_key($clean_name);
-    }
-
-    /**
-     * Detect prefix from call stack
-     *
-     * @return string
-     */
-    private function detect_prefix_from_backtrace(): string
-    {
-        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
-        
-        foreach ($backtrace as $frame) {
-            if (isset($frame['class']) && $frame['class'] !== self::class) {
-                return $this->class_name_to_prefix($frame['class']);
-            }
-        }
-        
-        // Fallback
-        return 'plugin_base_settings';
     }
 }

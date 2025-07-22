@@ -4,7 +4,15 @@ namespace WebMoves\PluginBase\Contracts\Plugin;
 
 interface PluginMetadata 
 {
-    /**
+
+	/**
+	 * Get the unified prefix for this plugin (used for hooks, options, etc.)
+	 * Based on plugin slug, safe for use in WordPress contexts
+	 */
+	public function get_prefix(): string;
+
+
+	/**
      * Get the plugin name
      */
     public function get_name(): string;
