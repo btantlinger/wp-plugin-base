@@ -21,6 +21,7 @@ use wpdb;
 class DefaultPluginCore implements PluginCore
 {
     private Container $container;
+
 	private Configuration $config;
 
 	private ComponentManager $component_manager;
@@ -29,10 +30,6 @@ class DefaultPluginCore implements PluginCore
 
 	private PluginMetadata $metadata;
 
-
-	//private string $plugin_version;
-    //private ?string $database_version;
-    //private string $plugin_name;
     private bool $initialized = false;
     /**
      * The plugin text domain
@@ -45,8 +42,6 @@ class DefaultPluginCore implements PluginCore
      * Constructor
      *
      * @param string $plugin_file The main plugin file path
-     * @param string $plugin_version The plugin version
-     * @param string|null $text_domain The plugin text domain (optional, will be derived from plugin name if not provided)
      */
     public function __construct(string $plugin_file)
     {
@@ -68,9 +63,6 @@ class DefaultPluginCore implements PluginCore
         if ($this->initialized) {
             return;
         }
-
-        // Load textdomain early for translations
-       // add_action('init', [$this, 'load_textdomain']);
 
         // Register lifecycle hooks dynamically
 	    $this->setup_plugin_management_hooks();
@@ -166,7 +158,6 @@ class DefaultPluginCore implements PluginCore
 		}
 	}
 
-
 	/**
 	 * Get the option key used to track plugin installation
 	 */
@@ -174,8 +165,6 @@ class DefaultPluginCore implements PluginCore
 	{
 		return sanitize_key( $this->metadata->get_prefix() . 'installed');
 	}
-
-
 
 	/**
      * Universal lifecycle handler
@@ -263,8 +252,6 @@ class DefaultPluginCore implements PluginCore
 		return $this->config->get($key, $default);
 	}
 
-
-
 	/**
      * Initialize components for a specific lifecycle
      */
@@ -276,8 +263,6 @@ class DefaultPluginCore implements PluginCore
         $component_manager = $this->get(ComponentManager::class);
         $component_manager->initialize_components_for_lifecycle($lifecycle);
     }
-
-
 
 
     /**
