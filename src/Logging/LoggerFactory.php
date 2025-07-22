@@ -11,20 +11,51 @@ use WebMoves\PluginBase\Contracts\Configuration\Configuration;
 class LoggerFactory
 {
     private string $plugin_name;
-
     private array $config;
+    
+    // Static reference to the factory instance for static access
+    private static ?self $instance = null;
+    
+    // Cache for logger instances by channel
+    private array $loggers = [];
 
     public function __construct(Configuration $config, string $plugin_name)
     {
-		$this->config = $config->get('logging', $this->get_default_config());
-		$this->plugin_name = $plugin_name;
+        $this->config = $config->get('logging', $this->get_default_config());
+        $this->plugin_name = $plugin_name;
+        
+        // Auto-register this instance for static access
+        if (!self::$instance) {
+            self::$instance = $this;
+        }
     }
 
+    /**
+     * Create/get a logger instance statically (cached)
+     */
+    public static function logger(string $channel = null): LoggerInterface
+    {
+        if (!self::$instance) {
+            throw new \RuntimeException('LoggerFactory has not been initialized yet');
+        }
+
+        return self::$instance->create($channel);
+    }
+
+    /**
+     * Create/get a logger instance (cached)
+     */
     public function create(string $channel = null): LoggerInterface
     {
         $channel = $channel ?? 'default';
-        $channel_name = "{$this->plugin_name}.{$channel}";
         
+        // Return cached instance if it exists
+        if (isset($this->loggers[$channel])) {
+            return $this->loggers[$channel];
+        }
+        
+        // Create new logger instance
+        $channel_name = "{$this->plugin_name}.{$channel}";
         $logger = new Logger($channel_name);
 
         // Get channel config
@@ -43,9 +74,26 @@ class LoggerFactory
             $logger->pushProcessor($processor);
         }
 
+        // Cache and return
+        $this->loggers[$channel] = $logger;
         return $logger;
     }
 
+    /**
+     * Clear cached loggers (useful for testing)
+     */
+    public function clear_cache(): void
+    {
+        $this->loggers = [];
+    }
+
+    /**
+     * Get all cached logger instances
+     */
+    public function get_cached_loggers(): array
+    {
+        return $this->loggers;
+    }
 
     private function get_default_config(): array
     {
