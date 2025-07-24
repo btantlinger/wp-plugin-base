@@ -1,6 +1,6 @@
 <?php
 
-namespace WebMoves\Concerns;
+namespace WebMoves\PluginBase\Concerns;
 
 use Psr\Log\LoggerInterface;
 use WebMoves\PluginBase\Logging\LoggerFactory;
