@@ -2,9 +2,9 @@
 
 namespace WebMoves\PluginBase\Contracts\Settings;
 
-use WebMoves\PluginBase\Contracts\Components\Component;
 
-interface SettingsProvider extends Component
+
+interface SettingsProvider
 {
 
 

@@ -60,21 +60,10 @@ abstract class AbstractSettingBuilder implements SettingsBuilder
 
 	public function register(): void
 	{
-		$this->register_providers();
 		add_action('admin_init', [$this, 'register_settings']);
 		add_action('current_screen', [$this, 'handle_settings_success']);
 	}
 
-	protected function register_providers(): void
-	{
-		$core = $this->get_plugin_core();
-		$providers = $this->get_providers();
-		foreach ($providers as $provider) {
-			if(!$core->get_component_manager()->contains($provider)) {
-				$core->get_component_manager()->add($provider);
-			}
-		}
-	}
 
 
 	public function register_settings(): void

@@ -7,6 +7,7 @@ use WebMoves\PluginBase\Concerns\Components\HasAction;
 use WebMoves\PluginBase\Concerns\Components\HasFilter;
 use WebMoves\PluginBase\Concerns\Components\HasShortcode;
 use WebMoves\PluginBase\Contracts\Components\Component;
+use WebMoves\PluginBase\Enums\Lifecycle;
 
 class AdvancedComponent implements Component {
 
@@ -26,6 +27,11 @@ class AdvancedComponent implements Component {
 		$this->append_content = $append_content;
 		$this->shortcode_defaults = $shortcode_defaults;
 	}
+
+	public function register_on(): Lifecycle {
+		return Lifecycle::INIT;
+	}
+
 
 	protected function get_action_hook(): string {
 		return 'wp_footer';

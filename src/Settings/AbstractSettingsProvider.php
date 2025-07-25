@@ -30,19 +30,4 @@ abstract class AbstractSettingsProvider implements SettingsProvider {
 	{
 		return $this->metadata;
 	}
-
-	public function register_on(): Lifecycle {
-		return Lifecycle::INIT;
-	}
-
-	public function register(): void {
-	}
-
-	public function get_priority(): int {
-		return 5;
-	}
-
-	public function can_register(): bool {
-		return true;
-	}
 }
