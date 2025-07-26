@@ -59,36 +59,71 @@ class DefaultSettingsManager implements SettingsManager
         return $this->cache[$key] ?? $default;
     }
 
-    /**
-     * Set a scoped option value
-     *
-     * @param string $key The option key (without scope prefix)
-     * @param mixed $value The value to store
-     * @return void
-     */
-    public function set_scoped_option(string $key, mixed $value): void
-    {
-        $this->load_cache();
-        
-        $this->cache[$key] = $value;
-        $this->dirty = true;
-    }
+	/**
+	 * Set a scoped option value
+	 *
+	 * @param string $key The option key (without scope prefix)
+	 * @param mixed $value The value to store
+	 * @return void
+	 */
+	public function set_scoped_option(string $key, mixed $value): void
+	{
+		$this->load_cache();
 
-    /**
-     * Delete a scoped option
-     *
-     * @param string $key The option key (without scope prefix)
-     * @return void
-     */
-    public function delete_scoped_option(string $key): void
-    {
-        $this->load_cache();
-        
-        if (isset($this->cache[$key])) {
-            unset($this->cache[$key]);
-            $this->dirty = true;
-        }
-    }
+		$old_value = $this->cache[$key] ?? null;
+		$this->cache[$key] = $value;
+		$this->dirty = true;
+
+		// Fire the update action with scope instead of full manager object
+		do_action(
+			self::UPDATE_HOOK . '_' . $this->wp_option_name,
+			$this->wp_option_name,  // Just the scope
+			$old_value,
+			$value,
+			$key
+		);
+
+		// Also fire the generic update action
+		do_action(
+			self::UPDATE_HOOK,
+			$this->wp_option_name,  // Just the scope
+			$old_value,
+			$value,
+			$key
+		);
+	}
+
+
+	/**
+	 * Delete a scoped option
+	 *
+	 * @param string $key The option key (without scope prefix)
+	 * @return void
+	 */
+	public function delete_scoped_option(string $key): void
+	{
+		$this->load_cache();
+
+		if (isset($this->cache[$key])) {
+			unset($this->cache[$key]);
+			$this->dirty = true;
+
+			// Fire the delete action with scope instead of full manager object
+			do_action(
+				self::DELETE_HOOK . '_' . $this->wp_option_name,
+				$this->wp_option_name,  // Just the scope
+				$key
+			);
+
+			// Also fire the generic delete action
+			do_action(
+				self::DELETE_HOOK,
+				$this->wp_option_name,  // Just the scope
+				$key
+			);
+		}
+	}
+
 
     /**
      * Check if a scoped option exists
@@ -114,7 +149,26 @@ class DefaultSettingsManager implements SettingsManager
         $this->load_cache();
         
         foreach ($options as $key => $value) {
+            $old_value = $this->cache[$key] ?? null;
             $this->cache[$key] = $value;
+            
+            // Fire the update action for each option
+            do_action(
+                self::UPDATE_HOOK . '_' . $this->wp_option_name,
+                $this->wp_option_name,
+                $old_value,
+                $value,
+                $key
+            );
+            
+            // Also fire the generic update action
+            do_action(
+                self::UPDATE_HOOK,
+                $this->wp_option_name,
+                $old_value,
+                $value,
+                $key
+            );
         }
         
         $this->dirty = true;
@@ -127,6 +181,24 @@ class DefaultSettingsManager implements SettingsManager
      */
     public function clear_all_scoped_options(): void
     {
+        $this->load_cache();
+        
+        // Fire delete actions for all existing options
+        foreach (array_keys($this->cache) as $key) {
+            do_action(
+                self::DELETE_HOOK . '_' . $this->wp_option_name,
+                $this->wp_option_name,
+                $key
+            );
+            
+            // Also fire the generic delete action
+            do_action(
+                self::DELETE_HOOK,
+                $this->wp_option_name,
+                $key
+            );
+        }
+        
         $this->cache = [];
         $this->cache_loaded = true;
         $this->dirty = true;
