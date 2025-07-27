@@ -31,8 +31,9 @@ class DefaultSettingsManagerFactory implements SettingsManagerFactory
      */
     public function create(object|string $scope = null): SettingsManager
     {
-        $prefix = $this->generate_scope($scope);
-        return new DefaultSettingsManager($prefix);
+        $scope = $this->generate_scope($scope);
+		$prefix = $this->metadata->get_prefix();
+        return new DefaultSettingsManager($scope, $prefix);
     }
 
 
@@ -48,6 +49,10 @@ class DefaultSettingsManagerFactory implements SettingsManagerFactory
      */
     public function generate_scope(object|string $context = null): string
     {
+		if(empty($context)) {
+			throw new \InvalidArgumentException('Context must be provided');
+		}
+
         if (is_string($context)) {
             // Explicit class name provided
             $context = $this->class_name_to_prefix($context);
@@ -55,12 +60,7 @@ class DefaultSettingsManagerFactory implements SettingsManagerFactory
             // Object instance provided
             $context = $this->class_name_to_prefix(get_class($context));
         }
-
-
-	    if ( $context !== null && strpos( $context, $this->metadata->get_prefix() ) === 0 ) {
-		    return $context;
-		}
-		return $this->metadata->get_prefix() . $context;
+		return $context;
     }
 
     /**

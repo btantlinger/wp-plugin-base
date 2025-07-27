@@ -7,21 +7,35 @@ use WebMoves\PluginBase\Contracts\Settings\SettingsManager;
 class DefaultSettingsManager implements SettingsManager
 {
     private string $wp_option_name;
-    private array $cache = [];
-    private bool $cache_loaded = false;
-    private bool $dirty = false;
+	private array $cache = [];
+	private bool $cache_loaded = false;
+	/**
+	 * Constructor
+	 *
+	 * Creates a new settings manager instance that handles settings within a specific scope.
+	 * The scope is created by concatenating the plugin_prefix and scope parameters with an
+	 * underscore separator. For example, if plugin_prefix is "my-plugin" and scope is
+	 * "product-sync", the resulting scope will be "my_plugin_product_sync_settings".
+	 *
+	 * @param ?string $plugin_prefix The plugin identifier prefix (e.g., "my-plugin")
+	 * @param string $scope The settings scope (e.g., "product-sync")
+	 */
+	public function __construct(string $scope, ?string $plugin_prefix = null)
+	{
+		if(!empty($plugin_prefix)) {
+			$scope = rtrim($plugin_prefix, "_-") . '_' . ltrim($scope, "_-");;
+		}
 
-    /**
-     * Constructor
-     *
-     * @param string $scope The scope for this settings manager (e.g., 'my-plugin.product-sync')
-     *                      Will be converted to WordPress-safe format internally
-     */
-    public function __construct(string $scope)
-    {
-        // Convert scope to WordPress-safe option name
-        $this->wp_option_name = $this->convert_scope_to_wp_option_name($scope);
-    }
+		$scope = trim($scope, "_-");
+		if(empty($scope)) {
+			throw new \InvalidArgumentException('Scope cannot be empty');
+		}
+
+		// Convert scope to WordPress-safe option name
+		$this->wp_option_name = $this->convert_scope_to_wp_option_name($scope);
+	}
+
+	private bool $dirty = false;
 
     /**
      * Get the WordPress-safe settings scope for use as an option name
@@ -133,8 +147,7 @@ class DefaultSettingsManager implements SettingsManager
      */
     public function has_scoped_option(string $key): bool
     {
-        $this->load_cache();
-        
+        $this->load_cache();        
         return isset($this->cache[$key]);
     }
 
@@ -252,8 +265,7 @@ class DefaultSettingsManager implements SettingsManager
      */
     private function convert_scope_to_wp_option_name(string $scope): string
     {
-        $safe_scope = str_replace(['.', '-'], '_', $scope);
-        return $safe_scope . '_settings';
+        return  sanitize_key(str_replace(['.', '-'], '_', strtolower($scope)));
     }
 
     /**
