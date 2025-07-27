@@ -55,6 +55,10 @@ class DefaultSettingsManagerFactory implements SettingsManagerFactory
             // Object instance provided
             $context = $this->class_name_to_prefix(get_class($context));
         }
+
+		if(str_starts_with($context, $this->metadata->get_prefix())) {
+			return $context;
+		}
 		return $this->metadata->get_prefix() . $context;
     }
 

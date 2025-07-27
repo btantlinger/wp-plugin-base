@@ -21,8 +21,6 @@ class DefaultSettingsBuilder extends AbstractSettingBuilder
 		$this->render_default_page();
 	}
 
-
-
 	protected function render_default_page(): void
 	{
 		echo '<form method="post" action="options.php">';
@@ -46,8 +44,11 @@ class DefaultSettingsBuilder extends AbstractSettingBuilder
 
 		// Build attributes
 		$attributes = $field['attributes'] ?? [];
+		unset($attributes['id']); //specified in config
+		unset($attributes['name']); // this is the id
 		if (!empty($field['required'])) {
 			$attributes['required'] = 'required';
+
 		}
 
 		$attribute_string = $this->build_attribute_string($attributes);
