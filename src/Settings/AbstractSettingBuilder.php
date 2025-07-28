@@ -4,6 +4,7 @@ namespace WebMoves\PluginBase\Settings;
 
 use Psr\Log\LoggerInterface;
 use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
+use WebMoves\PluginBase\Contracts\Settings\FlashData;
 use WebMoves\PluginBase\Contracts\Settings\SettingsProvider;
 use WebMoves\PluginBase\Contracts\Settings\SettingsBuilder;
 use WebMoves\PluginBase\Enums\Lifecycle;
@@ -17,7 +18,7 @@ abstract class AbstractSettingBuilder implements SettingsBuilder
 
 	protected LoggerInterface $logger;
 
-	protected DefaultFlashData $flash;
+	protected FlashData $flash;
 
 	protected $core;
 
@@ -28,7 +29,7 @@ abstract class AbstractSettingBuilder implements SettingsBuilder
 		$this->page = $page;
 		$this->text_domain = $core->get_metadata()->get_text_domain();
 		$this->logger = $core->get_logger('app');
-		$this->flash = new DefaultFlashData($page);
+		$this->flash = $core->get(FlashData::class);
 		$this->providers = $settings_providers;
 		$this->core = $core;
 	}

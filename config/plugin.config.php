@@ -21,6 +21,8 @@ use WebMoves\PluginBase\Templates\DefaultTemplateRenderer;
 use WebMoves\PluginBase\Components\Database\DatabaseInstaller;
 use WebMoves\PluginBase\Components\Database\DatabaseVersionChecker;
 use WebMoves\PluginBase\Contracts\Configuration\Configuration;
+use WebMoves\PluginBase\Contracts\Settings\FlashData;
+use WebMoves\PluginBase\Settings\DefaultFlashData;
 use function DI\create;
 use function DI\factory;
 use function DI\get;
@@ -127,6 +129,8 @@ return [
 				get(LoggerInterface::class)
 			),
 		TextDomainLoader::class => create( TextDomainLoader::class)->constructor(get( PluginMetadata::class)),
+
+		FlashData::class => create(DefaultFlashData::class),
 	],
 
 

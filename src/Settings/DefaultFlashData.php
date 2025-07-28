@@ -3,6 +3,7 @@
 namespace WebMoves\PluginBase\Settings;
 
 use WebMoves\PluginBase\Contracts\Settings\FlashData;
+use WebMoves\PluginBase\Enums\Lifecycle;
 
 class DefaultFlashData implements FlashData
 {
@@ -10,12 +11,12 @@ class DefaultFlashData implements FlashData
     private array $marked_for_deletion = [];
     private static array $hooks_registered = [];
 
-    public function __construct(string $page_slug = 'default')
+    public function __construct(string $page_slug = 'global')
     {
         $this->meta_key = 'flash_data_' . $page_slug;
         
         // ✅ ALWAYS register hooks immediately - don't wait
-        $this->register_hooks();
+        //$this->register_hooks();
     }
 
     /**
@@ -33,12 +34,10 @@ class DefaultFlashData implements FlashData
         if (is_admin()) {
             add_action('admin_notices', [$this, 'display_notices']);
             add_action('admin_footer', [$this, 'cleanup_expired']);
-            add_action('shutdown', [$this, 'cleanup_marked_items']);
         } else {
             add_action('wp_footer', [$this, 'cleanup_expired']);
-            add_action('shutdown', [$this, 'cleanup_marked_items']);
         }
-
+	    add_action('shutdown', [$this, 'cleanup_marked_items']);
         self::$hooks_registered[$page_key] = true;
     }
 
@@ -362,4 +361,22 @@ class DefaultFlashData implements FlashData
         echo '<p>' . wp_kses_post($notice['message']) . '</p>';
         echo '</div>';
     }
+
+	public function register_on(): Lifecycle {
+		return Lifecycle::INIT;
+	}
+
+	public function register(): void {
+		$this->register_hooks();
+	}
+
+	public function get_priority(): int {
+		return 1;
+	}
+
+	public function can_register(): bool {
+		return true;
+	}
+
+
 }
