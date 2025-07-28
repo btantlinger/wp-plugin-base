@@ -100,6 +100,9 @@ abstract class AbstractSettingBuilder implements SettingsBuilder
 			[
 				'type' => 'array',
 				'sanitize_callback' => function($input) use ($provider, $fields) {
+					if (!$input) {
+						$input = [];
+					}
 					return $this->validate_and_sanitize_group($input, $provider, $fields);
 				}
 			]
