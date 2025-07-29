@@ -5,7 +5,7 @@ namespace WebMoves\PluginBase\Settings;
 use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 use WebMoves\PluginBase\Contracts\Templates\TemplateRenderer;
 
-class TemplateSettingsBuilder extends AbstractSettingBuilder
+class TemplateSettingsBuilder extends DefaultSettingsBuilder
 {
 	private TemplateRenderer $template_renderer;
 

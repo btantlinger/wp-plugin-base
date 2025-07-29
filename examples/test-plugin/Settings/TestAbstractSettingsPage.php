@@ -4,10 +4,10 @@ namespace WebMoves\PluginBase\Examples\Settings;
 
 use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 use WebMoves\PluginBase\Contracts\Settings\SettingsManagerFactory;
-use WebMoves\PluginBase\Settings\AbstractSettingsPage;
+use WebMoves\PluginBase\Pages\AbstractSettingsPage;
 use WebMoves\PluginBase\Settings\FormControllerSettingsBuilder;
 
-class TestAbstractSettingsPage extends AbstractSettingsPage {
+class TestAbstractSettingsPage extends \WebMoves\PluginBase\Pages\AbstractSettingsPage {
 
 	private string $page_title;
 

@@ -686,7 +686,7 @@ namespace YourNamespace;
 
 use WebMoves\PluginBase\PluginBase;
 use WebMoves\PluginBase\Settings\MenuAdminPage;
-use WebMoves\PluginBase\Settings\AbstractSettingsPage;
+use WebMoves\PluginBase\Pages\AbstractSettingsPage;
 use WebMoves\PluginBase\Settings\DefaultSettingsBuilder;
 
 class YourPlugin extends PluginBase
@@ -849,7 +849,7 @@ new MenuAdminPage(
 To create a settings page that displays and manages plugin settings:
 
 ```php
-use WebMoves\PluginBase\Settings\AbstractSettingsPage;
+use WebMoves\PluginBase\Pages\AbstractSettingsPage;
 use WebMoves\PluginBase\Settings\DefaultSettingsBuilder;
 
 // In your plugin's get_services() method
@@ -888,7 +888,7 @@ public function get_services(): array
 To create a custom admin page with specialized functionality:
 
 ```php
-use WebMoves\PluginBase\Settings\AbstractAdminPage;
+use WebMoves\PluginBase\Pages\AbstractAdminPage;
 
 class MyCustomPage extends AbstractAdminPage
 {

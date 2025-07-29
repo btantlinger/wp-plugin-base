@@ -1,10 +1,11 @@
 <?php
 
-namespace WebMoves\PluginBase\Components\Support;
+namespace WebMoves\PluginBase\Plugin;
 
 use WebMoves\PluginBase\Components\AbstractComponent;
 use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 use WebMoves\PluginBase\Enums\Lifecycle;
+use WebMoves\PluginBase\Plugin\DependencyManager;
 
 class DependencyNotice extends AbstractComponent  {
 

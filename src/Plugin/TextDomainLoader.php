@@ -1,6 +1,6 @@
 <?php
 
-namespace WebMoves\PluginBase\Components\Support;
+namespace WebMoves\PluginBase\Plugin;
 
 use WebMoves\PluginBase\Components\AbstractComponent;
 use WebMoves\PluginBase\Enums\Lifecycle;

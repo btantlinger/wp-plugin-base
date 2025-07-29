@@ -1,6 +1,6 @@
 <?php
 
-namespace WebMoves\PluginBase\Components\Database;
+namespace WebMoves\PluginBase\Database;
 
 use WebMoves\PluginBase\Contracts\Components\Component;
 use WebMoves\PluginBase\Contracts\Configuration\Configuration;
