@@ -4,8 +4,8 @@ namespace WebMoves\PluginBase\Examples\Settings;
 
 use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 use WebMoves\PluginBase\Contracts\Settings\SettingsManagerFactory;
-use WebMoves\PluginBase\Settings\DefaultSettingsBuilder;
 use WebMoves\PluginBase\Settings\AbstractSettingsPage;
+use WebMoves\PluginBase\Settings\FormControllerSettingsBuilder;
 
 class TestAbstractSettingsPage extends AbstractSettingsPage {
 
@@ -20,7 +20,8 @@ class TestAbstractSettingsPage extends AbstractSettingsPage {
 		$this->page_title = $pageTitle;
 		$this->menu_title = $menuTitle;
 		$this->text_domain = $core->get_metadata()->get_text_domain();
-		$builder = new DefaultSettingsBuilder(
+
+		$builder = new FormControllerSettingsBuilder(
 			$core,
 			"test_plugin_settings",
 			"test-plugin-settings",

@@ -23,7 +23,7 @@ abstract class AbstractSettingBuilder implements SettingsBuilder
 	protected $core;
 
 
-	public function __construct(PluginCore $core, string $settingsGroup, string $page, array $settings_providers = [],)
+	public function __construct(PluginCore $core, string $settingsGroup, string $page, array $settings_providers = [])
 	{
 		$this->settingsGroup = $settingsGroup;
 		$this->page = $page;
@@ -62,7 +62,6 @@ abstract class AbstractSettingBuilder implements SettingsBuilder
 	public function register(): void
 	{
 		add_action('admin_init', [$this, 'register_settings']);
-		add_action('current_screen', [$this, 'handle_settings_success']);
 	}
 
 
@@ -74,155 +73,8 @@ abstract class AbstractSettingBuilder implements SettingsBuilder
 		}
 	}
 
-	public function handle_settings_success(): void
-	{
-		// Only add success message if we processed a submission and have no errors
-		$settings_updated = isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'true';
-		if ($settings_updated && $this->is_current_settings_page() && !$this->flash->has_errors()) {
-			$this->flash->add_success('Settings saved successfully!');
-		}
-	}
 
-
-	private function register_provider_configuration(SettingsProvider $provider): void
-	{
-		$config = $provider->get_settings_configuration();
-		$section = $config['section'];
-		$fields = $config['fields'];
-
-		// Get the option name from the settings manager
-		$option_name = $provider->settings()->get_settings_scope();
-
-		// Register single setting for the entire group
-		register_setting(
-			$this->settingsGroup,
-			$option_name,
-			[
-				'type' => 'array',
-				'sanitize_callback' => function($input) use ($provider, $fields) {
-					if (!$input) {
-						$input = [];
-					}
-					return $this->validate_and_sanitize_group($input, $provider, $fields);
-				}
-			]
-		);
-
-		// Register section
-		add_settings_section(
-			$section['id'],
-			$section['title'],
-			function() use ($section) {
-				if (!empty($section['description'])) {
-					echo '<p>' . esc_html($section['description']) . '</p>';
-				}
-			},
-			$this->page
-		);
-
-		// Register fields for display
-		foreach ($fields as $field_key => $field_config) {
-
-			$required = !empty($field_config['required']);
-			add_settings_field(
-				$field_key,
-				$field_config['label']  . ($required ? ' <span class="required" style="color:crimson;">*</span>' : ''),
-				[$this, 'render_settings_field'],
-				$this->page,
-				$section['id'],
-				[
-					'field' => $field_config,
-					'provider' => $provider,
-					'field_key' => $field_key,
-					'field_name' => $option_name . '[' . $field_key . ']'
-				]
-			);
-		}
-	}
-
-	private function validate_and_sanitize_group(array $input, SettingsProvider $provider, array $fields): array
-	{
-		$errors = [];
-		$sanitized = [];
-
-		foreach ($fields as $field_key => $field_config) {
-			$value = $input[$field_key] ?? '';
-
-			// Sanitize
-			$sanitized_value = $this->sanitize_field_value($value, $field_config);
-
-			// Check required fields
-			if ((!empty($field_config['required'])) && empty($sanitized_value)) {
-
-				$req_validator = FieldValidators::required($this->get_text_domain());
-				if(empty($field_config['validate_callback'])) {
-					$field_config['validate_callback'] = $req_validator;
-				} else {
-					$validators = FieldValidators::combine([$field_config['validate_callback'], $req_validator]);
-					$field_config['validate_callback'] = $validators;
-				}
-			}
-
-			// Custom validation
-			if (isset($field_config['validate_callback'])) {
-				$result = call_user_func($field_config['validate_callback'], $sanitized_value, $field_config);
-				if (is_wp_error($result)) {
-					$errors[$field_key] = $result->get_error_message();
-				}
-			}
-
-			$sanitized[$field_key] = $sanitized_value;
-		}
-
-		if (!empty($errors)) {
-			// Add errors as notices
-			$this->flash->add_field_errors($errors);
-
-			// Store form data for redisplay
-			$this->flash->set_form_data($provider->settings()->get_settings_scope(), $sanitized);
-
-			return $provider->settings()->get_all_scoped_options();
-		}
-			// Success
-		$this->flash->clear( 'form_' . $provider->settings()->get_settings_scope() );
-
-		return $sanitized;
-	}
-
-
-	private function is_current_settings_page(): bool
-	{
-		$screen = get_current_screen();
-		if (!$screen) {
-			return false;
-		}
-
-		// Check if the current page matches this builder's page
-		return strpos($screen->id, $this->page) !== false;
-	}
-
-
-	private function sanitize_field_value($value, array $field_config)
-	{
-		if (isset($field_config['sanitize_callback'])) {
-			return call_user_func($field_config['sanitize_callback'], $value);
-		}
-
-		switch ($field_config['type']) {
-			case 'text':
-			case 'email':
-			case 'url':
-				return sanitize_text_field($value);
-			case 'textarea':
-				return sanitize_textarea_field($value);
-			case 'number':
-				return intval($value);
-			case 'checkbox':
-				return !empty($value);
-			default:
-				return sanitize_text_field($value);
-		}
-	}
+	protected abstract function register_provider_configuration(SettingsProvider $provider): void;
 
 
 	/**

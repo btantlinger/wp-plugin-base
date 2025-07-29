@@ -12,6 +12,7 @@ use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 use WebMoves\PluginBase\Components\Support\DependencyManager;
 use WebMoves\PluginBase\Components\Support\DependencyNotice;
 use WebMoves\PluginBase\Contracts\Settings\SettingsManagerFactory;
+use WebMoves\PluginBase\Contracts\Settings\SettingsProcessor;
 use WebMoves\PluginBase\Contracts\Templates\TemplateRenderer;
 use WebMoves\PluginBase\Database\DefaultDatabaseManager;
 use WebMoves\PluginBase\Logging\LoggerFactory;
@@ -23,6 +24,7 @@ use WebMoves\PluginBase\Components\Database\DatabaseVersionChecker;
 use WebMoves\PluginBase\Contracts\Configuration\Configuration;
 use WebMoves\PluginBase\Contracts\Settings\FlashData;
 use WebMoves\PluginBase\Settings\DefaultFlashData;
+use WebMoves\PluginBase\Settings\DefaultSettingsProcessor;
 use function DI\create;
 use function DI\factory;
 use function DI\get;
@@ -76,6 +78,9 @@ return [
 
 		SettingsManagerFactory::class => create(DefaultSettingsManagerFactory::class)
 			->constructor(get(PluginMetadata::class)),
+		SettingsProcessor::class => create(DefaultSettingsProcessor::class)
+			->constructor(get("plugin.text_domain")),
+
 		TemplateRenderer::class => create(DefaultTemplateRenderer::class)
 			->constructor(get(PluginCore::class)),
 

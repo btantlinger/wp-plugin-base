@@ -3,12 +3,45 @@
 namespace WebMoves\PluginBase\Settings;
 
 use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
+use WebMoves\PluginBase\Contracts\Settings\SettingsProvider;
+use WebMoves\PluginBase\Contracts\Settings\SettingsProcessor;
+use WebMoves\PluginBase\Settings\Traits\DefaultFieldRenderer;
 
 class DefaultSettingsBuilder extends AbstractSettingBuilder
 {
+	use DefaultFieldRenderer;
+
+	private SettingsProcessor $processor;
+
 	public function __construct(PluginCore $core, string $settingsGroup, string $page, array $settings_providers = [])
 	{
 		parent::__construct($core, $settingsGroup, $page, $settings_providers);
+		$this->processor = $core->get(SettingsProcessor::class);
+	}
+
+	public function register(): void {
+		parent::register();
+		add_action('current_screen', [$this, 'handle_settings_success']);
+	}
+
+	public function handle_settings_success(): void
+	{
+		// Only add success message if we processed a submission and have no errors
+		$settings_updated = isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'true';
+		if ($settings_updated && $this->is_current_settings_page() && !$this->flash->has_errors()) {
+			$this->flash->add_success('Settings saved successfully!');
+		}
+	}
+
+	private function is_current_settings_page(): bool
+	{
+		$screen = get_current_screen();
+		if (!$screen) {
+			return false;
+		}
+
+		// Check if the current page matches this builder's page
+		return strpos($screen->id, $this->get_settings_page()) !== false;
 	}
 
 	public function render_settings_field( array $args ): void
@@ -28,117 +61,80 @@ class DefaultSettingsBuilder extends AbstractSettingBuilder
 		do_settings_sections($this->get_settings_page());
 		submit_button();
 		echo '</form>';
-
 	}
 
-	protected function renderer_default_field(array $args): void
+	protected function register_provider_configuration(SettingsProvider $provider): void
 	{
-		$field = $args['field'];
-		$provider = $args['provider'];
-		$field_key = $args['field_key'];
-		$field_name = $args['field_name'];
+		$config = $provider->get_settings_configuration();
+		$section = $config['section'];
+		$fields = $config['fields'];
 
-		//$value = $provider->settings()->get_scoped_option($field_key, $field['default'] ?? null);
-		$value = $this->get_field_display_value($provider, $field_key, $field['default'] ?? '');
+		// Get the option name from the settings manager
+		$option_name = $provider->settings()->get_settings_scope();
 
+		// Register single setting for the entire group
+		register_setting(
+			$this->get_settings_group(),
+			$option_name,
+			[
+				'type' => 'array',
+				'sanitize_callback' => function($input) use ($provider) {
+					if (!$input) {
+						$input = [];
+					}
+					return $this->validate_and_sanitize_group($input, $provider);
+				}
+			]
+		);
 
-		// Build attributes
-		$attributes = $field['attributes'] ?? [];
-		unset($attributes['id']); //specified in config
-		unset($attributes['name']); // this is the id
-		if (!empty($field['required'])) {
-			$attributes['required'] = 'required';
+		// Register section
+		add_settings_section(
+			$section['id'],
+			$section['title'],
+			function() use ($section) {
+				if (!empty($section['description'])) {
+					echo '<p>' . esc_html($section['description']) . '</p>';
+				}
+			},
+			$this->get_settings_page()
+		);
 
+		// Register fields for display
+		foreach ($fields as $field_key => $field_config) {
+			$required = !empty($field_config['required']);
+			add_settings_field(
+				$field_key,
+				$field_config['label']  . ($required ? ' <span class="required" style="color:crimson;">*</span>' : ''),
+				[$this, 'render_settings_field'],
+				$this->get_settings_page(),
+				$section['id'],
+				[
+					'field' => $field_config,
+					'provider' => $provider,
+					'field_key' => $field_key,
+					'field_name' => $option_name . '[' . $field_key . ']'
+				]
+			);
+		}
+	}
+
+	protected function validate_and_sanitize_group(array $input, SettingsProvider $provider): array
+	{
+		$result = $this->processor->process($input, $provider);
+
+		if (isset($result['errors'])) {
+			// Add errors as notices
+			$this->flash->add_field_errors($result['errors']);
+
+			// Store form data for redisplay
+			$this->flash->set_form_data($provider->settings()->get_settings_scope(), $input);
+
+			return $provider->settings()->get_all_scoped_options();
 		}
 
-		$attribute_string = $this->build_attribute_string($attributes);
+		// Success
+		$this->flash->clear('form_' . $provider->settings()->get_settings_scope());
 
-		switch ($field['type']) {
-			case 'text':
-			case 'email':
-			case 'url':
-			case 'number':
-				$this->render_input_field($field, $field_name, $value, $attribute_string);
-				break;
-
-			case 'textarea':
-				$this->render_textarea_field($field_name, $value, $attribute_string);
-				break;
-
-			case 'checkbox':
-				$this->render_checkbox_field($field_name, $value, $attribute_string);
-				break;
-
-			case 'select':
-				$this->render_select_field($field, $field_name, $value, $attribute_string);
-				break;
-		}
-
-		if (!empty($field['description'])) {
-			if($field['type'] == 'checkbox') {
-				echo '<label for="' .$field_name. '" class="description">' . esc_html($field['description']) . '</label>';
-			} else {
-				echo '<p class="description">' . esc_html($field['description']) . '<p/>';
-			}
-		}
+		return $result['data'];
 	}
-
-	private function build_attribute_string(array $attributes): string
-	{
-		$attribute_string = '';
-		foreach ($attributes as $attr => $attr_value) {
-			if ($attr_value === true || $attr_value === 'required') {
-				$attribute_string .= ' ' . esc_attr($attr);
-			} else {
-				$attribute_string .= ' ' . esc_attr($attr) . '="' . esc_attr($attr_value) . '"';
-			}
-		}
-		return $attribute_string;
-	}
-
-	private function render_input_field(array $field, string $field_name, $value, string $attribute_string): void
-	{
-		echo '<input type="' . esc_attr($field['type']) . '" ' .
-		     'id="' . esc_attr($field_name) . '" ' .
-		     'name="' . esc_attr($field_name) . '" ' .
-		     'value="' . esc_attr($value) . '" ' .
-		     'class="regular-text" ' .
-		     $attribute_string . ' />';
-	}
-
-	private function render_textarea_field(string $field_name, $value, string $attribute_string): void
-	{
-		echo '<textarea ' .
-		     'id="' . esc_attr($field_name) . '" ' .
-		     'name="' . esc_attr($field_name) . '" ' .
-		     'class="large-text" ' .
-		     'rows="5" ' .
-		     $attribute_string . '>' . esc_textarea($value) . '</textarea>';
-	}
-
-	private function render_checkbox_field(string $field_name, $value, string $attribute_string): void
-	{
-		echo '<input type="checkbox" ' .
-		     'id="' . esc_attr($field_name) . '" ' .
-		     'name="' . esc_attr($field_name) . '" ' .
-		     'value="1" ' .
-		     checked($value, true, false) . ' ' .
-		     $attribute_string . ' />';
-	}
-
-	private function render_select_field(array $field, string $field_name, $value, string $attribute_string): void
-	{
-		echo '<select ' .
-		     'id="' . esc_attr($field_name) . '" ' .
-		     'name="' . esc_attr($field_name) . '" ' .
-		     $attribute_string . '>';
-
-		foreach ($field['options'] ?? [] as $option_value => $option_label) {
-			echo '<option value="' . esc_attr($option_value) . '" ' .
-			     selected($value, $option_value, false) . '>' .
-			     esc_html($option_label) . '</option>';
-		}
-		echo '</select>';
-	}
-
 }
