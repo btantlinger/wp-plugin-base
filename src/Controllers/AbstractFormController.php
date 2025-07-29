@@ -333,7 +333,7 @@ abstract class AbstractFormController extends AbstractComponent implements FormC
     /**
      * Handle the specific action - must be implemented by child classes
      * @param array $data The request data ($_GET or $_POST)
-     * @return mixed The result of the action (can be used in success handling)
+     *
      */
     abstract protected function handle_action(array $data): void;
 
