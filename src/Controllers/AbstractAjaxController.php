@@ -205,7 +205,7 @@ abstract class AbstractAjaxController extends AbstractComponent implements AjaxC
      * @param array $data The request data ($_POST typically)
      * @return mixed The result of the action (will be sent as JSON response)
      */
-    abstract protected function handle_action(array $data): void;
+    abstract protected function handle_action(array $data): mixed;
 
     /**
      * @inheritDoc
