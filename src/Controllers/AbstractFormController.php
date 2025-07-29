@@ -12,12 +12,15 @@ use WebMoves\PluginBase\Contracts\Controllers\FormController;
 abstract class AbstractFormController extends AbstractComponent implements FormController
 {
     protected string $action;
-    private string $request_method;
-    protected string $text_domain;
-    protected PluginMetadata $metadata;
-    protected FlashData $flash_data;
+	protected string $text_domain;
+	protected PluginMetadata $metadata;
+	protected FlashData $flash_data;
+	protected bool $preserve_context = true;
 
-    /**
+	private string $request_method;
+	private ?string $base_url = null;
+
+	/**
      * @param PluginMetadata $metadata
      * @param FlashData $flash_data
      * @param string $action The action identifier (e.g., 'cancel_sync', 'delete_sync')
@@ -33,14 +36,39 @@ abstract class AbstractFormController extends AbstractComponent implements FormC
         parent::__construct();
     }
 
-    /**
+	public function get_base_url(): ?string
+	{
+		return $this->base_url;
+	}
+
+	public function set_base_url( ?string $base_url ): void
+	{
+		$this->base_url = $base_url;
+	}
+
+	public function set_preserve_context(bool $preserve_context): void
+	{
+		$this->preserve_context = $preserve_context;
+	}
+
+	public function should_preserve_context(): bool
+	{
+		return $this->preserve_context;
+	}
+
+	public function get_nonce_key(): string {
+		return "_wpnonce";
+	}
+
+
+	/**
      * @inheritDoc
      */
     public function register(): void
     {
         $data = strtoupper($this->request_method) == 'GET' ? $_GET : $_POST;
 
-        if (isset($data['action'], $data[self::NONCE_KEY]) && $data['action'] === $this->action) {
+        if (isset($data['action'], $data[$this->get_nonce_key()]) && $data['action'] === $this->action) {
             $this->handle_request($data);
         }
     }
@@ -59,7 +87,7 @@ abstract class AbstractFormController extends AbstractComponent implements FormC
 
             // Verify nonce
             $nonce_action = $this->get_nonce_action($data);
-            if (!wp_verify_nonce($data[self::NONCE_KEY], $nonce_action)) {
+            if (!wp_verify_nonce($data[$this->get_nonce_key()], $nonce_action)) {
                 $this->handle_security_failure();
                 return;
             }
@@ -239,7 +267,7 @@ abstract class AbstractFormController extends AbstractComponent implements FormC
      */
     protected function get_redirect_params_to_remove(array $data): array
     {
-        return ['action', self::NONCE_KEY];
+        return ['action', $this->get_nonce_key()];
     }
 
     /**
@@ -262,9 +290,9 @@ abstract class AbstractFormController extends AbstractComponent implements FormC
     /**
      * @inheritDoc
      */
-    public function create_action_url(array $params = [], ?string $base_url = null, bool $preserve_context = true): string
+    public function create_action_url(array $params = []): string
     {
-        if ($preserve_context) {
+        if ($this->preserve_context) {
             // Start with existing GET parameters to preserve context
             $merged_params = array_merge($_GET, $params);
         } else {
@@ -274,6 +302,8 @@ abstract class AbstractFormController extends AbstractComponent implements FormC
 
         // Always set our action
         $merged_params['action'] = $this->action;
+
+		$base_url = $this->get_base_url();
 
         // If no base URL provided, use current page
         if ($base_url === null) {

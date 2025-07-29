@@ -25,7 +25,12 @@ abstract class AbstractAjaxController extends AbstractComponent implements AjaxC
         parent::__construct();
     }
 
-    /**
+	public function get_nonce_key(): string {
+		return "_wpnonce";
+	}
+
+
+	/**
      * @inheritDoc
      */
     public function register(): void
@@ -62,7 +67,7 @@ abstract class AbstractAjaxController extends AbstractComponent implements AjaxC
 
             // Verify nonce
             $nonce_action = $this->get_nonce_action($data);
-            if (!wp_verify_nonce($data[self::NONCE_KEY], $nonce_action)) {
+            if (!wp_verify_nonce($data[$this->get_nonce_key()], $nonce_action)) {
                 wp_send_json_error([
                     'message' => __('Security check failed. Please refresh the page and try again.', $this->text_domain)
                 ], 403);
@@ -175,11 +180,10 @@ abstract class AbstractAjaxController extends AbstractComponent implements AjaxC
     /**
      * @inheritDoc
      */
-    public function create_action_url(array $params = [], ?string $base_url = null): string
+    public function create_action_url(array $params = []): string
     {
-        // AJAX controllers typically don't need action URLs, but we'll provide a basic implementation
         $params['action'] = $this->action;
-        $base_url = $base_url ?: admin_url('admin-ajax.php');
+        $base_url = admin_url('admin-ajax.php');
         return add_query_arg($params, $base_url);
     }
 
