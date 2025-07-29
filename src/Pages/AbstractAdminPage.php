@@ -8,11 +8,12 @@ use WebMoves\PluginBase\Concerns\Components\ComponentRegistration;
 use WebMoves\PluginBase\Concerns\Components\HasAdminMenu;
 use WebMoves\PluginBase\Contracts\Assets\Asset;
 use WebMoves\PluginBase\Contracts\Components\Component;
+use WebMoves\PluginBase\Contracts\Pages\AdminPage;
 use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 use WebMoves\PluginBase\Contracts\Plugin\PluginMetadata;
 use WebMoves\PluginBase\Enums\Lifecycle;
 
-abstract class AbstractAdminPage implements Component  {
+abstract class AbstractAdminPage implements AdminPage  {
 
 	use ComponentRegistration;
 	use HasAdminMenu;

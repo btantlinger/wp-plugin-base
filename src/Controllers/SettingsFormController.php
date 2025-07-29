@@ -6,6 +6,7 @@ use WebMoves\PluginBase\Contracts\Plugin\PluginMetadata;
 use WebMoves\PluginBase\Contracts\Settings\FlashData;
 use WebMoves\PluginBase\Contracts\Settings\SettingsProvider;
 use WebMoves\PluginBase\Contracts\Settings\SettingsProcessor;
+use WebMoves\PluginBase\Enums\Lifecycle;
 
 class SettingsFormController extends AbstractFormController
 {
@@ -22,6 +23,11 @@ class SettingsFormController extends AbstractFormController
 	protected function get_nonce_action(array $data): string
 	{
 		return $this->action;
+	}
+
+	public function register_on(): Lifecycle
+	{
+		return Lifecycle::ADMIN_INIT;
 	}
 
 	protected function handle_action(array $data): array

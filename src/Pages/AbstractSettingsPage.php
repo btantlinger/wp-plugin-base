@@ -2,27 +2,26 @@
 
 namespace WebMoves\PluginBase\Pages;
 
-use WebMoves\PluginBase\Contracts\Settings\SettingsBuilder;
-use WebMoves\PluginBase\Pages\AbstractAdminPage;
+use WebMoves\PluginBase\Contracts\Forms\SettingsForm;
+use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 
 abstract class AbstractSettingsPage extends AbstractAdminPage
 {
-	protected SettingsBuilder $builder;
+	protected SettingsForm $form;
 
-	public function __construct(SettingsBuilder $builder, ?string $parent_slug = null) {
-		parent::__construct($builder->get_plugin_core(), $builder->get_settings_page(), $parent_slug);
-		$this->builder = $builder;
+	public function __construct(PluginCore $core, SettingsForm $form, ?string $parent_slug = null) {
+		parent::__construct($core, $form->get_settings_page(), $parent_slug);
+		$this->form = $form;
 	}
 
-	public function get_settings_builder(): SettingsBuilder {
-		return $this->builder;
+	public function get_settings_form(): SettingsForm {
+		return $this->form;
 	}
 
 	protected function before_register(): void
 	{
-		$core = $this->builder->get_plugin_core();
-		if(!$core->get_component_manager()->contains($this->builder)) {
-			$core->get_component_manager()->add($this->builder);
+		if(!$this->core->get_component_manager()->contains($this->form)) {
+			$this->core->get_component_manager()->add($this->form);
 		}
 	}
 
@@ -30,7 +29,7 @@ abstract class AbstractSettingsPage extends AbstractAdminPage
 	{
 		echo '<div class="wrap">';
 		echo '<h1>' . esc_html(get_admin_page_title()) . "</h1>";
-		$this->builder->render_form();
+		$this->form->render_form();
 		echo '</div>';
 	}
 }

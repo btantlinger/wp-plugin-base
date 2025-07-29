@@ -67,7 +67,6 @@ abstract class AbstractFormController extends AbstractComponent implements FormC
     public function register(): void
     {
         $data = strtoupper($this->request_method) == 'GET' ? $_GET : $_POST;
-
         if (isset($data['action'], $data[$this->get_nonce_key()]) && $data['action'] === $this->action) {
             $this->handle_request($data);
         }
