@@ -335,7 +335,7 @@ abstract class AbstractFormController extends AbstractComponent implements FormC
      * @param array $data The request data ($_GET or $_POST)
      *
      */
-    abstract protected function handle_action(array $data): void;
+    abstract protected function handle_action(array $data): array;
 
     /**
      * @inheritDoc

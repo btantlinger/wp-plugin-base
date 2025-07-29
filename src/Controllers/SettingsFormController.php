@@ -24,7 +24,7 @@ class SettingsFormController extends AbstractFormController
 		return $this->action;
 	}
 
-	protected function handle_action(array $data): void
+	protected function handle_action(array $data): array
 	{
 		$results = [];
 		$errors = [];
@@ -58,6 +58,8 @@ class SettingsFormController extends AbstractFormController
 			$scope = $provider->settings()->get_settings_scope();
 			$this->flash_data->clear('form_' . $scope);
 		}
+
+		return $results;
 	}
 
 	private function process_provider_settings(SettingsProvider $provider, array $data): array
