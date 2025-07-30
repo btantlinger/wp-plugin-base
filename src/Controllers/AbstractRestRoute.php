@@ -2,11 +2,10 @@
 
 namespace WebMoves\PluginBase\Controllers;
 
-use WebMoves\PluginBase\Contracts\Controllers\RestController;
-use WebMoves\PluginBase\Contracts\Plugin\PluginMetadata;
+use WebMoves\PluginBase\Contracts\Controllers\RestRoute;
 use WebMoves\PluginBase\Enums\Lifecycle;
 
-abstract class AbstractRestController implements RestController  {
+abstract class AbstractRestRoute implements RestRoute  {
 
 	protected string $nonce_key = 'X-WP-Nonce';
 
@@ -27,7 +26,7 @@ abstract class AbstractRestController implements RestController  {
 
 
 	public function __construct(string $route, string $namespace, array $args = [], array $methods = ['GET']) {
-		$this->route = $route;
+		$this->route = trim($route, '/');
 		$this->namespace = $namespace;
 		$this->methods = $methods;
 		$this->args = $args;

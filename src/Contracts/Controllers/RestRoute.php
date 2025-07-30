@@ -2,7 +2,7 @@
 
 namespace WebMoves\PluginBase\Contracts\Controllers;
 
-interface RestController extends Controller {
+interface RestRoute extends Controller {
 	/**
 	 * Get the REST namespace (e.g., 'my-plugin/v1')
 	 */

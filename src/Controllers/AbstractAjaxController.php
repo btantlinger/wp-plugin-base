@@ -2,7 +2,7 @@
 
 namespace WebMoves\PluginBase\Controllers;
 
-
+use Psr\Log\LoggerInterface;
 use WebMoves\PluginBase\Components\AbstractComponent;
 use WebMoves\PluginBase\Contracts\Plugin\PluginMetadata;
 use WebMoves\PluginBase\Contracts\Settings\FlashData;
@@ -16,8 +16,11 @@ abstract class AbstractAjaxController extends AbstractComponent implements AjaxC
     protected PluginMetadata $metadata;
     protected FlashData $flash_data;
 
+	protected LoggerInterface $logger;
+
     public function __construct(PluginMetadata $metadata, FlashData $flash_data, string $action)
     {
+		$this->logger = \WebMoves\PluginBase\Logging\LoggerFactory::logger();
         $this->metadata = $metadata;
         $this->flash_data = $flash_data;
         $this->action = $action;
@@ -132,7 +135,7 @@ abstract class AbstractAjaxController extends AbstractComponent implements AjaxC
             return;
         }
 
-        error_log(sprintf(
+        $this->logger->debug(sprintf(
             '[%s] User %d performed AJAX action "%s" with data: %s',
             $this->metadata->get_name(),
             get_current_user_id(),
@@ -154,7 +157,7 @@ abstract class AbstractAjaxController extends AbstractComponent implements AjaxC
      */
     protected function handle_exception(\Exception $e, array $data): void
     {
-        error_log(sprintf(
+		$this->logger->error(sprintf(
             '[%s] Exception in AJAX action "%s": %s',
             $this->metadata->get_name(),
             $this->action,

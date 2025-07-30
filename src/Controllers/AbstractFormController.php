@@ -3,11 +3,13 @@
 namespace WebMoves\PluginBase\Controllers;
 
 
+use Psr\Log\LoggerInterface;
 use WebMoves\PluginBase\Components\AbstractComponent;
 use WebMoves\PluginBase\Contracts\Plugin\PluginMetadata;
 use WebMoves\PluginBase\Contracts\Settings\FlashData;
 use WebMoves\PluginBase\Enums\Lifecycle;
 use WebMoves\PluginBase\Contracts\Controllers\FormController;
+use WebMoves\PluginBase\Logging\LoggerFactory;
 
 abstract class AbstractFormController extends AbstractComponent implements FormController
 {
@@ -20,6 +22,8 @@ abstract class AbstractFormController extends AbstractComponent implements FormC
 	private string $request_method;
 	private ?string $base_url = null;
 
+	protected LoggerInterface $logger;
+
 	/**
      * @param PluginMetadata $metadata
      * @param FlashData $flash_data
@@ -28,6 +32,7 @@ abstract class AbstractFormController extends AbstractComponent implements FormC
      */
     public function __construct(PluginMetadata $metadata, FlashData $flash_data, string $action, string $request_method = 'GET')
     {
+		$this->logger = LoggerFactory::logger();
         $this->metadata = $metadata;
         $this->flash_data = $flash_data;
         $this->action = $action;
@@ -149,7 +154,7 @@ abstract class AbstractFormController extends AbstractComponent implements FormC
             return;
         }
 
-        error_log(sprintf(
+        $this->logger->debug(sprintf(
             '[%s] User %d performed action "%s" with data: %s',
             $this->metadata->get_name(),
             get_current_user_id(),
@@ -214,7 +219,7 @@ abstract class AbstractFormController extends AbstractComponent implements FormC
      */
     protected function handle_exception(\Exception $e, array $data): void
     {
-        error_log(sprintf(
+        $this->logger->error(sprintf(
             '[%s] Exception in action "%s": %s',
             $this->metadata->get_name(),
             $this->action,

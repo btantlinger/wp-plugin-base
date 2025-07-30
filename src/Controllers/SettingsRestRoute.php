@@ -5,7 +5,7 @@ namespace WebMoves\PluginBase\Controllers;
 use WebMoves\PluginBase\Contracts\Settings\SettingsProvider;
 use WebMoves\PluginBase\Contracts\Settings\SettingsProcessor;
 
-class SettingsRestController extends AbstractRestController
+class SettingsRestRoute extends AbstractRestRoute
 {
 	private array $settings_providers;
 	private SettingsProcessor $processor;

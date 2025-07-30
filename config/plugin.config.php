@@ -25,6 +25,7 @@ use WebMoves\PluginBase\Contracts\Configuration\Configuration;
 use WebMoves\PluginBase\Contracts\Settings\FlashData;
 use WebMoves\PluginBase\Settings\DefaultFlashData;
 use WebMoves\PluginBase\Settings\DefaultSettingsProcessor;
+use WebMoves\PluginBase\Logging\WPCLIHandler;
 use function DI\create;
 use function DI\factory;
 use function DI\get;
@@ -148,19 +149,24 @@ return [
 	'logging' => [
 		'channels' => [
 			'default' => [
-				'handlers' => ['stream', 'error_log'],
+				'handlers' => ['stream', 'error_log', 'console'],
 				'processors' => [],
 			],
 			'app' => [
-				'handlers' => ['stream'],
+				'handlers' => ['stream', 'console'],
 				'processors' => [],
 			],
 			'database' => [
-				'handlers' => ['stream'],
+				'handlers' => ['stream', 'console'],
 				'processors' => [],
 			],
 			'api' => [
-				'handlers' => ['stream', 'error_log'],
+				'handlers' => ['stream', 'error_log', 'console'],
+				'processors' => [],
+			],
+			// Add CLI channel
+			'cli' => [
+				'handlers' => ['console'],
 				'processors' => [],
 			],
 		],
@@ -181,6 +187,15 @@ return [
 				],
 				'formatter' => 'line',
 			],
+			// Add console handler
+			'console' => [
+				'class' => WPCLIHandler::class,
+				'constructor' => [
+					'level' => Level::Debug,
+				],
+				'formatter' => 'cli' , // Conditional formatter
+			],
+
 		],
 		'formatters' => [
 			'line' => [
@@ -190,8 +205,19 @@ return [
 					'dateFormat' => 'Y-m-d H:i:s',
 				],
 			],
+			// Add CLI-specific formatter (cleaner output)
+			'cli' => [
+				'class' => LineFormatter::class,
+				'constructor' => [
+					'format' => "%level_name%: %message% %context% %extra%\n",  // Simpler format for CLI
+					'dateFormat' => 'Y-m-d H:i:s',
+					'allowInlineLineBreaks' => true,
+					'ignoreEmptyContextAndExtra' => true, // This hides empty context/extra
+				],
+			],
 		],
 	],
+
 
 	/*
 	|--------------------------------------------------------------------------
