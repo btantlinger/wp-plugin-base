@@ -87,7 +87,7 @@ abstract class AbstractRestRoute implements RestRoute  {
 		return [$this, 'can_execute_action'];
 	}
 
-	protected function can_execute_action(): bool {
+	public function can_execute_action(): bool {
 		return current_user_can('manage_options');
 	}
 
