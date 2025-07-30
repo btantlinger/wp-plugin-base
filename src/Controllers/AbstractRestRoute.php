@@ -58,7 +58,7 @@ abstract class AbstractRestRoute implements RestRoute  {
 		add_action('rest_api_init', [$this, 'register_route']);
 	}
 
-	private function register_route(): void {
+	public function register_route(): void {
 		register_rest_route(
 			$this->get_namespace(),
 			$this->get_action(),
