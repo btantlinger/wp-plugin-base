@@ -10,8 +10,11 @@ enum Lifecycle: string {
     case UNINSTALL = 'uninstall';     // Plugin uninstall/deletion
 
     // Runtime lifecycle events
+    case PRE_BOOTSTRAP = 'pre_bootstrap'; // During plugin instantiation, before WordPress hooks
+
     case BOOTSTRAP = 'bootstrap';     // Very early, before WordPress fully loads
-    case INIT = 'init';              // Standard init hook
+
+	case INIT = 'init';              // Standard init hook
     case ADMIN_INIT = 'admin_init';  // Admin-specific initialization
     case READY = 'ready';            // After everything is loaded
 

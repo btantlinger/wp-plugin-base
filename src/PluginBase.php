@@ -160,12 +160,11 @@ class PluginBase {
 	private function __construct(PluginCore $core)
 	{
 		$this->core = $core;
-
-		$this->core->initialize();
 		$services = $this->get_services();
 		foreach($services as $id => $service) {
 			$this->core->set($id, $service);
 		}
+		$this->core->initialize();
 		$this->initialize();
 	}
 

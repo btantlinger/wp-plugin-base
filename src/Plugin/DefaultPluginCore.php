@@ -50,7 +50,6 @@ class DefaultPluginCore implements PluginCore
 	    $this->config = new DefaultConfiguration($this);
 		$this->component_manager = new DefaultComponentManager();
 	    $this->setup_container();
-
     }
 
     /**
@@ -75,8 +74,11 @@ class DefaultPluginCore implements PluginCore
         register_deactivation_hook($this->plugin_file, function() {
             $this->on_lifecycle(Lifecycle::DEACTIVATE);
         });
-
         $this->initialized = true;
+
+	    // Trigger PRE_BOOTSTRAP lifecycle immediately after initialization
+	    $this->on_lifecycle(Lifecycle::PRE_BOOTSTRAP);
+
     }
 
     /**
