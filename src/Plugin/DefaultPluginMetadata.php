@@ -6,21 +6,29 @@ use WebMoves\PluginBase\Contracts\Plugin\PluginMetadata;
 
 class DefaultPluginMetadata implements PluginMetadata
 {
-    private array $data;
+    private ?array $data = null;
     private string $plugin_file;
     
     public function __construct(string $plugin_file)
     {
         $this->plugin_file = $plugin_file;
-        $this->load_plugin_data();
+
     }
+
+	protected function get_data(): array
+	{
+		if(!$this->data) {
+			$this->data = $this->load_plugin_data();
+		}
+		return $this->data;
+	}
     
-    private function load_plugin_data(): void
+    private function load_plugin_data(): array
     {
         if (!function_exists('get_plugin_data')) {
             require_once ABSPATH . 'wp-admin/includes/plugin.php';
         }
-        $this->data = get_plugin_data($this->plugin_file, false, false);
+        return get_plugin_data($this->plugin_file, false, false);
     }
 
 	/**
@@ -35,7 +43,7 @@ class DefaultPluginMetadata implements PluginMetadata
 
 	public function get_name(): string
     {
-        return $this->data['Name'] ?? $this->plugin_file;
+        return $this->get_data()['Name'] ?? $this->plugin_file;
     }
 
 	public function get_file(): string
@@ -45,69 +53,69 @@ class DefaultPluginMetadata implements PluginMetadata
     
     public function get_version(): string
     {
-        return $this->data['Version'] ?? '1.0.0';
+        return $this->get_data()['Version'] ?? '1.0.0';
     }
     
     public function get_text_domain(): string
     {
-        return $this->data['TextDomain'] ?: $this->derive_text_domain();
+        return $this->get_data()['TextDomain'] ?: $this->derive_text_domain();
     }
     
     public function get_description(): string
     {
-        return $this->data['Description'] ?? '';
+        return $this->get_data()['Description'] ?? '';
     }
     
     public function get_author(): string
     {
-        return $this->data['Author'] ?? '';
+        return $this->get_data()['Author'] ?? '';
     }
 
     
     public function get_plugin_uri(): string
     {
-        return $this->data['PluginURI'] ?? '';
+        return $this->get_data()['PluginURI'] ?? '';
     }
     
     public function get_author_uri(): string
     {
-        return $this->data['AuthorURI'] ?? '';
+        return $this->get_data()['AuthorURI'] ?? '';
     }
     
     public function get_requires_wp(): string
     {
-        return $this->data['RequiresWP'] ?? '';
+        return $this->get_data()['RequiresWP'] ?? '';
     }
     
     public function get_requires_php(): string
     {
-        return $this->data['RequiresPHP'] ?? '8.3';
+        return $this->get_data()['RequiresPHP'] ?? '8.3';
     }
     
     public function get_network(): bool
     {
-        return $this->data['Network'] ?? false;
+        return $this->get_data()['Network'] ?? false;
     }
     
     public function get_domain_path(): string
     {
-        return $this->data['DomainPath'] ?? '/languages';
+        return $this->get_data()['DomainPath'] ?? '/languages';
     }
     
     public function get_update_uri(): string
     {
-        return $this->data['UpdateURI'] ?? '';
+        return $this->get_data()['UpdateURI'] ?? '';
     }
     
     public function get_requires_plugins(): array
     {
-        $requires = $this->data['RequiresPlugins'] ?? '';
+        $requires = $this->get_data()['RequiresPlugins'] ?? '';
         return empty($requires) ? [] : array_map('trim', explode(',', $requires));
     }
     
     public function get_all_data(): array
     {
-        return $this->data;
+        return $this->get_data();
     }
     
     public function get_plugin_file(): string

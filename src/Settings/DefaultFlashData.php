@@ -14,9 +14,6 @@ class DefaultFlashData implements FlashData
     public function __construct(string $page_slug = 'global')
     {
         $this->meta_key = 'flash_data_' . $page_slug;
-        
-        // ✅ ALWAYS register hooks immediately - don't wait
-        //$this->register_hooks();
     }
 
     /**
