@@ -37,7 +37,7 @@ class DefaultPluginMetadata implements PluginMetadata
 	 */
 	public function get_prefix(): string
 	{
-		return sanitize_key($this->get_plugin_slug()) . '_';
+		return str_replace('-', '_', sanitize_key($this->get_plugin_slug())) . '_';
 	}
 
 
