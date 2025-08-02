@@ -3,7 +3,7 @@
 namespace WebMoves\PluginBase\BackgroundTasks;
 
 use WebMoves\PluginBase\Components\AbstractComponent;
-use WebMoves\PluginBase\Contacts\BackgroundTasks\BackgroundTask;
+use WebMoves\PluginBase\Contracts\BackgroundTasks\BackgroundTask;
 use WebMoves\PluginBase\Contracts\Plugin\PluginMetadata;
 use WebMoves\PluginBase\Enums\Lifecycle;
 use WebMoves\PluginBase\Concerns\HasLogger;

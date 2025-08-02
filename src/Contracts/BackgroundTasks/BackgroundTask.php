@@ -1,6 +1,6 @@
 <?php
 
-namespace WebMoves\PluginBase\Contacts\BackgroundTasks;
+namespace WebMoves\PluginBase\Contracts\BackgroundTasks;
 
 use WebMoves\PluginBase\Contracts\Components\Component;
 
