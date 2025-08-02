@@ -34,8 +34,7 @@ class DatabaseVersionChecker implements Component
 
 	public function can_register(): bool
 	{
-		// Only register in admin or during cron to avoid frontend performance impact
-		return true;//is_admin() || wp_doing_cron() || (defined('WP_CLI') && WP_CLI);
+		return (!wp_doing_ajax() && !wp_doing_cron() && !wp_is_serving_rest_request()) && is_admin();
 	}
 
 	public function get_priority(): int

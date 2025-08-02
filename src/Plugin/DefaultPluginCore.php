@@ -173,7 +173,7 @@ class DefaultPluginCore implements PluginCore
      */
     public function on_lifecycle(Lifecycle $lifecycle): void
     {
-        $this->get_logger()->info(
+        $this->get_logger()->debug(
 	        $this->get_plugin_name() . ' on_' . $lifecycle->value,
             ['version' => $this->get_version(), 'lifecycle' => $lifecycle->value]
         );
