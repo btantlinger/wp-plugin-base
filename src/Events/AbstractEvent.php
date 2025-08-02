@@ -8,6 +8,7 @@ use WebMoves\PluginBase\Contracts\Events\Event;
 use WebMoves\PluginBase\Contracts\Plugin\PluginMetadata;
 use WebMoves\PluginBase\Enums\Lifecycle;
 
+
 abstract class AbstractEvent extends AbstractComponent implements Event
 {
 	use HasLogger;
@@ -16,18 +17,17 @@ abstract class AbstractEvent extends AbstractComponent implements Event
 
 	protected string $hook_name;
 	protected int $hook_priority = 10;
-	protected int $hook_accepted_args = 1;
+
 
 	// Custom schedules to register
 	protected array $custom_schedules = [];
 
-	public function __construct(PluginMetadata $metadata, string $hook_name, int $hook_priority = 10, int $hook_accepted_args = 1)
+	public function __construct(PluginMetadata $metadata, string $hook_name, int $hook_priority = 10)
 	{
 		parent::__construct();
 		$this->metadata = $metadata;
 		$this->hook_name = ltrim(str_replace('-', '_', sanitize_key($hook_name)), '_');
 		$this->hook_priority = $hook_priority;
-		$this->hook_accepted_args = $hook_accepted_args;
 		$this->logger = $this->log();
 		$this->metadata->get_prefix();
 	}
@@ -43,7 +43,7 @@ abstract class AbstractEvent extends AbstractComponent implements Event
 		add_filter('cron_schedules', [$this, 'add_custom_schedules']);
 
 		// Register the event handler
-		add_action($this->get_hook_name(), [$this, 'handle_event'], $this->hook_priority, $this->hook_accepted_args);
+		add_action($this->get_hook_name(), [$this, 'handle_event'], $this->hook_priority);
 
 		// Hook into WordPress init for scheduling setup
 		add_action('init', [$this, 'on_init']);
@@ -135,7 +135,9 @@ abstract class AbstractEvent extends AbstractComponent implements Event
 		return $schedules[$schedule]['display'] ?? null;
 	}
 
-	public function schedule(\DateTime|int|null $when = null, ?string $recurrence = null, array $args = []): bool
+
+
+	public function schedule(\DateTime|int|null $when = null, ?string $recurrence = null): bool
 	{
 		if ($this->is_scheduled()) {
 			$this->unschedule();
@@ -148,50 +150,27 @@ abstract class AbstractEvent extends AbstractComponent implements Event
 		};
 
 		if ($recurrence) {
-			return wp_schedule_event($timestamp, $recurrence, $this->get_hook_name(), $args) !== false;
+			return wp_schedule_event($timestamp, $recurrence, $this->get_hook_name()) !== false;
 		} else {
-			return wp_schedule_single_event($timestamp, $this->get_hook_name(), $args) !== false;
+			return wp_schedule_single_event($timestamp, $this->get_hook_name()) !== false;
 		}
 	}
 
+
 	public function unschedule(): bool
 	{
-		$this->logger->info('=== UNSCHEDULE EVENT ===');
-
 		$hook = $this->get_hook_name();
-		$cleared_any = false;
+		$cleared = wp_clear_scheduled_hook($hook);
 
-		// Get all scheduled instances, not just the next one
-		while ($timestamp = wp_next_scheduled($hook)) {
-			$this->logger->info('Clearing scheduled event at: ' . date('Y-m-d H:i:s', $timestamp));
-			$result = wp_unschedule_event($timestamp, $hook);
-			$this->logger->info('Unschedule result: ' . ($result ? 'SUCCESS' : 'FAILED'));
-
-			if ($result) {
-				$cleared_any = true;
-			} else {
-				// Prevent infinite loop - if unschedule fails, break and use nuclear option
-				$this->logger->info('Failed to unschedule, using wp_clear_scheduled_hook as fallback');
-				$nuclear_result = wp_clear_scheduled_hook($hook);
-				$cleared_any = $cleared_any || ($nuclear_result > 0);
-				break;
-			}
+		if ($cleared > 0) {
+			$this->log()->debug("Cleared {$cleared} scheduled events for hook: {$hook}");
 		}
 
-		// Double-check with nuclear option if needed
-		$remaining = wp_next_scheduled($hook);
-		if ($remaining) {
-			$this->logger->info('WARNING: Events still scheduled after clear attempt, using wp_clear_scheduled_hook');
-			$nuclear_result = wp_clear_scheduled_hook($hook);
-			$cleared_any = $cleared_any || ($nuclear_result > 0);
-		}
-
-		$this->logger->info('=== END UNSCHEDULE EVENT ===');
-		return $cleared_any;
+		return $cleared > 0;
 	}
 
 	/**
 	 * Handle the event - override in subclasses
 	 */
-	public abstract function handle_event(...$args): void;
+	public abstract function handle_event(): void;
 }

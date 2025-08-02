@@ -23,11 +23,11 @@ interface Event extends Component {
 	public function get_interval_display(): ?string;
 
 
-	public function schedule(\DateTime|int|null $when = null, ?string $recurrence = null, array $args = []): bool;
+	public function schedule(\DateTime|int|null $when = null, ?string $recurrence = null): bool;
 
 
 	public function unschedule(): bool;
 
-	public function handle_event(...$args): void;
+	public function handle_event(): void;
 
 }
