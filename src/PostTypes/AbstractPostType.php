@@ -18,6 +18,8 @@ abstract class AbstractPostType extends AbstractComponent implements PostType
      */
     abstract public function get_post_type(): string;
 
+
+
     /**
      * Register on INIT lifecycle
      */
@@ -90,8 +92,8 @@ abstract class AbstractPostType extends AbstractComponent implements PostType
     private function generate_default_labels(): array
     {
         $post_type = $this->get_post_type();
-        $singular = $this->humanize($post_type);
-        $plural = $this->pluralize($singular);
+        $singular = $this->get_singular_name();
+        $plural = $this->get_plural_name();
         $singular_lower = strtolower($singular);
         $plural_lower = strtolower($plural);
 
@@ -115,7 +117,13 @@ abstract class AbstractPostType extends AbstractComponent implements PostType
      */
     public function get_singular_name(): string
     {
-        return $this->humanize($this->get_post_type());
+	    // First check if a custom singular name is provided in get_args()
+	    $args = $this->get_args();
+	    if (isset($args['labels']['singular_name'])) {
+		    return $args['labels']['singular_name'];
+	    }
+
+	    return $this->singularize($this->humanize($this->get_post_type()));
     }
 
     /**
@@ -123,7 +131,13 @@ abstract class AbstractPostType extends AbstractComponent implements PostType
      */
     public function get_plural_name(): string
     {
-        return $this->pluralize($this->get_singular_name());
+	    // First check if a custom plural name is provided in get_args()
+	    $args = $this->get_args();
+	    if (isset($args['labels']['name'])) {
+		    return $args['labels']['name'];
+	    }
+
+	    return $this->pluralize($this->get_singular_name());
     }
 
     /**

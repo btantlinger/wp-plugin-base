@@ -161,18 +161,17 @@ class PluginBase {
 	private function __construct( PluginCore $core ) {
 
 		$this->core = $core;
-		$services   = $this->get_services();
-		foreach ( $services as $id => $service ) {
-			$this->core->set( $id, $service );
-		}
-		$this->core->initialize();
 
 		// Register and set the text domain for translations
 		$text_domain = $this->core->get_text_domain();
 		TranslationManager::register_text_domain($text_domain);
 		TranslationManager::set_current_text_domain($text_domain);
 
-
+		$services = $this->get_services();
+		foreach ( $services as $id => $service ) {
+			$this->core->set( $id, $service );
+		}
+		$this->core->initialize();
 		$this->initialize();
 	}
 

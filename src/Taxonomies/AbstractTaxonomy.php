@@ -99,8 +99,8 @@ abstract class AbstractTaxonomy extends AbstractComponent implements Taxonomy
     private function generate_default_labels(): array
     {
         $taxonomy = $this->get_taxonomy();
-        $singular = $this->humanize($taxonomy);
-        $plural = $this->pluralize($singular);
+        $singular = $this->get_singular_name();
+        $plural = $this->get_plural_name();
         $singular_lower = strtolower($singular);
         $plural_lower = strtolower($plural);
 
@@ -129,21 +129,36 @@ abstract class AbstractTaxonomy extends AbstractComponent implements Taxonomy
         ];
     }
 
-    /**
-     * Get the generated singular name for this taxonomy
-     */
-    public function get_singular_name(): string
-    {
-        return $this->humanize($this->get_taxonomy());
-    }
+	/**
+	 * Get the generated singular name for this taxonomy
+	 */
+	public function get_singular_name(): string
+	{
+		// First check if a custom singular name is provided in get_args()
+		$args = $this->get_args();
+		if (isset($args['labels']['singular_name'])) {
+			return $args['labels']['singular_name'];
+		}
 
-    /**
-     * Get the generated plural name for this taxonomy
-     */
-    public function get_plural_name(): string
-    {
-        return $this->pluralize($this->get_singular_name());
-    }
+		// Fall back to automatic generation
+		return $this->humanize($this->get_taxonomy());
+	}
+
+	/**
+	 * Get the generated plural name for this taxonomy
+	 */
+	public function get_plural_name(): string
+	{
+		// First check if a custom plural name is provided in get_args()
+		$args = $this->get_args();
+		if (isset($args['labels']['name'])) {
+			return $args['labels']['name'];
+		}
+
+		// Fall back to automatic generation
+		return $this->pluralize($this->get_singular_name());
+	}
+
 
     /**
      * Get the REST API endpoint URL for this taxonomy
