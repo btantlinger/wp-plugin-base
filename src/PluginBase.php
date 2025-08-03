@@ -4,6 +4,7 @@ namespace WebMoves\PluginBase;
 
 use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 use WebMoves\PluginBase\Plugin\DefaultPluginCore;
+use WebMoves\PluginBase\Plugin\TranslationManager;
 
 /**
  * Base Plugin Class
@@ -148,23 +149,30 @@ class PluginBase {
 
 	/**
 	 * Private constructor to enforce singleton pattern
-	 * 
+	 *
 	 * Initializes the plugin by:
 	 * 1. Setting up the core
 	 * 2. Initializing the core system
 	 * 3. Registering custom services from get_services()
 	 * 4. Calling the initialize() extension point
-	 * 
+	 *
 	 * @param PluginCore $core The plugin core instance
 	 */
-	private function __construct(PluginCore $core)
-	{
+	private function __construct( PluginCore $core ) {
+
 		$this->core = $core;
-		$services = $this->get_services();
-		foreach($services as $id => $service) {
-			$this->core->set($id, $service);
+		$services   = $this->get_services();
+		foreach ( $services as $id => $service ) {
+			$this->core->set( $id, $service );
 		}
 		$this->core->initialize();
+
+		// Register and set the text domain for translations
+		$text_domain = $this->core->get_text_domain();
+		TranslationManager::register_text_domain($text_domain);
+		TranslationManager::set_current_text_domain($text_domain);
+
+
 		$this->initialize();
 	}
 

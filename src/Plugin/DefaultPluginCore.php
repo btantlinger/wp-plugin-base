@@ -4,6 +4,8 @@ namespace WebMoves\PluginBase\Plugin;
 
 use DI\Container;
 use DI\ContainerBuilder;
+use Doctrine\Inflector\Inflector;
+use Doctrine\Inflector\InflectorFactory;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use WebMoves\PluginBase\Components\DefaultComponentManager;
@@ -31,12 +33,6 @@ class DefaultPluginCore implements PluginCore
 	private PluginMetadata $metadata;
 
     private bool $initialized = false;
-    /**
-     * The plugin text domain
-     *
-     * @var string
-     */
-    //private string $text_domain;
 
     /**
      * Constructor
@@ -151,7 +147,6 @@ class DefaultPluginCore implements PluginCore
 
 			$instance->on_lifecycle(Lifecycle::UNINSTALL);
 
-
 			// Clean up any plugin-level options
 			delete_option($instance->get_installation_option_key());
 
@@ -177,7 +172,6 @@ class DefaultPluginCore implements PluginCore
 	        $this->get_plugin_name() . ' on_' . $lifecycle->value,
             ['version' => $this->get_version(), 'lifecycle' => $lifecycle->value]
         );
-
 
         // Initialize components for this lifecycle
         $this->initialize_components_for_lifecycle($lifecycle);
@@ -216,9 +210,11 @@ class DefaultPluginCore implements PluginCore
             // Add DefaultPluginCore instance to the container definitions
 	        PluginCore::class            => $this,
 	        ComponentManager::class      => $this->component_manager,
-	        PluginMetadata::class => $this->metadata, // Available for injection
+	        PluginMetadata::class        => $this->metadata, // Available for injection
 	        Configuration::class         => $this->config,
 	        wpdb::class                  => $wpdb,
+            // Add Doctrine Inflector
+            Inflector::class             => InflectorFactory::create()->build(),
         ]);
 
 	    $services = $this->config->getServices();
@@ -266,7 +262,6 @@ class DefaultPluginCore implements PluginCore
         $component_manager->initialize_components_for_lifecycle($lifecycle);
     }
 
-
     /**
      * Register a service in the container
      *
@@ -294,7 +289,6 @@ class DefaultPluginCore implements PluginCore
         return $this->container->get($id);
     }
 
-
     /**
      * Handle plugins_loaded action (for backward compatibility and database handling)
      *
@@ -304,7 +298,6 @@ class DefaultPluginCore implements PluginCore
     {
         $this->get_logger()->info( $this->get_plugin_name() . ' on_plugins_loaded', [ 'version' => $this->get_version()]);
     }
-
 
     public function get_logger(?string $channel=null): LoggerInterface
     {

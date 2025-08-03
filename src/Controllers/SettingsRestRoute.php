@@ -267,7 +267,7 @@ class SettingsRestRoute extends AbstractRestRoute
 		return $schema;
 	}
 
-	protected function can_execute_action(): bool
+	public function can_execute_action(): bool
 	{
 		if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 			return current_user_can('read');
