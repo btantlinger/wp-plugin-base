@@ -25,7 +25,7 @@ abstract class AbstractAsset extends AbstractComponent implements Asset
         ?string $custom_handle = null
     ) {
         $this->metadata = $metadata;
-        $this->relative_path = ltrim($relative_path, '/');
+        $this->relative_path = $this->is_url($relative_path) ? $relative_path : ltrim($relative_path, '/');
         $this->dependencies = $dependencies;
         $this->version = $version ?? $metadata->get_version();
         $this->enqueue_hook = $enqueue_hook;
@@ -33,25 +33,50 @@ abstract class AbstractAsset extends AbstractComponent implements Asset
         parent::__construct();
     }
 
+    /**
+     * Check if the given path is a URL
+     */
+    private function is_url(string $path): bool
+    {
+        return filter_var($path, FILTER_VALIDATE_URL) !== false || 
+               str_starts_with($path, '//') || // Protocol-relative URLs
+               str_starts_with($path, 'data:'); // Data URLs
+    }
+
     public function get_handle(): string
     {
         if (empty($this->handle)) {
-	        // Auto-generate handle from plugin prefix + sanitized path
-	        $path_parts = pathinfo($this->relative_path);
-	        $filename = $path_parts['filename']; // Without extension
+            if ($this->is_url($this->relative_path)) {
+                // For URLs, create handle from the URL path/filename
+                $parsed_url = parse_url($this->relative_path);
+                $path = $parsed_url['path'] ?? '';
+                $path_parts = pathinfo($path);
+                $filename = $path_parts['filename'] ?? 'external-asset';
+                
+                // Sanitize the filename and add prefix
+                $this->handle = $this->metadata->get_prefix() . 'external-' . sanitize_key($filename);
+            } else {
+                // Auto-generate handle from plugin prefix + sanitized path
+                $path_parts = pathinfo($this->relative_path);
+                $filename = $path_parts['filename']; // Without extension
 
-	        // Convert path separators and sanitize
-	        $path_key = str_replace(['/', '\\', '.'], '-', $path_parts['dirname']);
-	        $path_key = ($path_key === '.' || $path_key === '-') ? '' : $path_key . '-';
-	        $this->handle = $this->metadata->get_prefix() . $path_key . sanitize_key($filename);
+                // Convert path separators and sanitize
+                $path_key = str_replace(['/', '\\', '.'], '-', $path_parts['dirname']);
+                $path_key = ($path_key === '.' || $path_key === '-') ? '' : $path_key . '-';
+                $this->handle = $this->metadata->get_prefix() . $path_key . sanitize_key($filename);
+            }
         }
-	    return $this->handle;
+        return $this->handle;
     }
 
     public function get_src(): string
     {
+        // If it's already a URL, return as-is
+        if ($this->is_url($this->relative_path)) {
+            return $this->relative_path;
+        }
+        
         // Convert relative path to full URL
-        $plugin_dir = dirname($this->metadata->get_file());
         return plugin_dir_url($this->metadata->get_file()) . $this->relative_path;
     }
 
