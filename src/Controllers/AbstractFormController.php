@@ -33,7 +33,7 @@ abstract class AbstractFormController extends AbstractComponent implements FormC
      */
     public function __construct(PluginMetadata $metadata, FlashData $flash_data, string $action, string $request_method = 'GET')
     {
-		//$this->logger = LoggerFactory::logger();
+		//$this->logger = $this->log();
         $this->metadata = $metadata;
         $this->flash_data = $flash_data;
         $this->action = $action;
@@ -155,7 +155,7 @@ abstract class AbstractFormController extends AbstractComponent implements FormC
             return;
         }
 
-        $this->logger->debug(sprintf(
+        $this->log()->debug(sprintf(
             '[%s] User %d performed action "%s" with data: %s',
             $this->metadata->get_name(),
             get_current_user_id(),
@@ -220,7 +220,7 @@ abstract class AbstractFormController extends AbstractComponent implements FormC
      */
     protected function handle_exception(\Exception $e, array $data): void
     {
-        $this->logger->error(sprintf(
+        $this->log()->error(sprintf(
             '[%s] Exception in action "%s": %s',
             $this->metadata->get_name(),
             $this->action,

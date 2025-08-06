@@ -35,6 +35,7 @@ abstract class AbstractAjaxController extends AbstractComponent implements AjaxC
 	}
 
 
+
 	/**
      * @inheritDoc
      */
@@ -137,7 +138,7 @@ abstract class AbstractAjaxController extends AbstractComponent implements AjaxC
             return;
         }
 
-        $this->logger->debug(sprintf(
+        $this->log()->debug(sprintf(
             '[%s] User %d performed AJAX action "%s" with data: %s',
             $this->metadata->get_name(),
             get_current_user_id(),
@@ -159,7 +160,7 @@ abstract class AbstractAjaxController extends AbstractComponent implements AjaxC
      */
     protected function handle_exception(\Exception $e, array $data): void
     {
-		$this->logger->error(sprintf(
+		$this->log()->error(sprintf(
             '[%s] Exception in AJAX action "%s": %s',
             $this->metadata->get_name(),
             $this->action,
@@ -229,7 +230,7 @@ abstract class AbstractAjaxController extends AbstractComponent implements AjaxC
      */
     public function register_on(): Lifecycle
     {
-        return Lifecycle::INIT;
+        return Lifecycle::PRE_BOOTSTRAP;
     }
 
     public function get_priority(): int
