@@ -3,13 +3,12 @@
 namespace WebMoves\PluginBase\Controllers;
 
 
-use Psr\Log\LoggerInterface;
 use WebMoves\PluginBase\Components\AbstractComponent;
+use WebMoves\PluginBase\Concerns\HasLogger;
+use WebMoves\PluginBase\Contracts\Controllers\FormController;
 use WebMoves\PluginBase\Contracts\Plugin\PluginMetadata;
 use WebMoves\PluginBase\Contracts\Settings\FlashData;
 use WebMoves\PluginBase\Enums\Lifecycle;
-use WebMoves\PluginBase\Contracts\Controllers\FormController;
-use WebMoves\PluginBase\Logging\LoggerFactory;
 
 abstract class AbstractFormController extends AbstractComponent implements FormController
 {
@@ -22,7 +21,9 @@ abstract class AbstractFormController extends AbstractComponent implements FormC
 	private string $request_method;
 	private ?string $base_url = null;
 
-	protected LoggerInterface $logger;
+	//protected LoggerInterface $logger;
+
+	use HasLogger;
 
 	/**
      * @param PluginMetadata $metadata
@@ -32,7 +33,7 @@ abstract class AbstractFormController extends AbstractComponent implements FormC
      */
     public function __construct(PluginMetadata $metadata, FlashData $flash_data, string $action, string $request_method = 'GET')
     {
-		$this->logger = LoggerFactory::logger();
+		//$this->logger = LoggerFactory::logger();
         $this->metadata = $metadata;
         $this->flash_data = $flash_data;
         $this->action = $action;

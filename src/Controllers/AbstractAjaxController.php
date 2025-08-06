@@ -4,6 +4,7 @@ namespace WebMoves\PluginBase\Controllers;
 
 use Psr\Log\LoggerInterface;
 use WebMoves\PluginBase\Components\AbstractComponent;
+use WebMoves\PluginBase\Concerns\HasLogger;
 use WebMoves\PluginBase\Contracts\Plugin\PluginMetadata;
 use WebMoves\PluginBase\Contracts\Settings\FlashData;
 use WebMoves\PluginBase\Enums\Lifecycle;
@@ -14,15 +15,16 @@ abstract class AbstractAjaxController extends AbstractComponent implements AjaxC
     protected string $action;
     protected string $text_domain;
     protected PluginMetadata $metadata;
-    protected FlashData $flash_data;
 
-	protected LoggerInterface $logger;
 
-    public function __construct(PluginMetadata $metadata, FlashData $flash_data, string $action)
+	//protected LoggerInterface $logger;
+	use HasLogger;
+
+    public function __construct(PluginMetadata $metadata,  string $action)
     {
-		$this->logger = \WebMoves\PluginBase\Logging\LoggerFactory::logger();
+		//$this->logger = \WebMoves\PluginBase\Logging\LoggerFactory::logger();
         $this->metadata = $metadata;
-        $this->flash_data = $flash_data;
+        //$this->flash_data = $flash_data;
         $this->action = $action;
         $this->text_domain = $metadata->get_text_domain();
         parent::__construct();
