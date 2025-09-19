@@ -95,21 +95,47 @@ class PluginBase {
 	 * MyPlugin::init_plugin(__FILE__);
 	 * ```
 	 */
+	/**
+	 * Singleton instances per plugin class
+	 *
+	 * @var array<string, PluginBase>
+	 */
+	private static array $instances = [];
+
+	// ... existing code ...
+
+	/**
+	 * Initialize the plugin singleton
+	 *
+	 * Creates the plugin instance using the singleton pattern. This method should be called
+	 * once from your main plugin file to bootstrap the entire plugin system.
+	 *
+	 * @param string $plugin_file Absolute path to the main plugin file (__FILE__ from main plugin)
+	 * @return static The plugin instance
+	 * @throws \LogicException If plugin is already initialized
+	 *
+	 * @example
+	 * ```php
+	 * // In your main plugin file
+	 * MyPlugin::init_plugin(__FILE__);
+	 * ```
+	 */
 	public static function init_plugin(string $plugin_file): static {
-		if(!is_null(static::$instance)) {
+		$class = static::class;
+		if(isset(static::$instances[$class])) {
 			throw new \LogicException('Plugin already initialized');
 		}
 		$core = static::create_core($plugin_file);
-		static::$instance = new static($core);
-		return static::$instance;
+		static::$instances[$class] = new static($core);
+		return static::$instances[$class];
 	}
 
 	/**
 	 * Get the singleton plugin instance
-	 * 
+	 *
 	 * @return static The plugin instance
 	 * @throws \LogicException If plugin has not been initialized
-	 * 
+	 *
 	 * @example
 	 * ```php
 	 * $plugin = MyPlugin::get_instance();
@@ -118,10 +144,11 @@ class PluginBase {
 	 */
 	public static function get_instance(): static
 	{
-		if(is_null(static::$instance)) {
+		$class = static::class;
+		if(!isset(static::$instances[$class])) {
 			throw new \LogicException('Plugin not initialized');
 		}
-		return static::$instance;
+		return static::$instances[$class];
 	}
 
 	/**
