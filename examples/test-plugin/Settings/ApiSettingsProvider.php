@@ -2,10 +2,18 @@
 
 namespace WebMoves\PluginBase\Examples\Settings;
 
+use WebMoves\PluginBase\Contracts\Plugin\PluginMetadata;
+use WebMoves\PluginBase\Contracts\Settings\SettingsManager;
+use WebMoves\PluginBase\Contracts\Settings\SettingsManagerFactory;
 use WebMoves\PluginBase\Settings\AbstractSettingsProvider;
 
 class ApiSettingsProvider extends AbstractSettingsProvider
 {
+	public function __construct(SettingsManagerFactory $smf, PluginMetadata $metadata)
+	{
+		parent::__construct($smf->create('test-plugin-api'), $metadata);
+	}
+
 	public function get_settings_configuration(): array
 	{
 		return [

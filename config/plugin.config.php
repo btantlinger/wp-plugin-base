@@ -26,6 +26,7 @@ use WebMoves\PluginBase\Contracts\Settings\FlashData;
 use WebMoves\PluginBase\Settings\DefaultFlashData;
 use WebMoves\PluginBase\Settings\DefaultSettingsProcessor;
 use WebMoves\PluginBase\Logging\WPCLIHandler;
+use WebMoves\PluginBase\Synchronizers\DatabaseSyncService;
 use function DI\create;
 use function DI\factory;
 use function DI\get;
@@ -237,10 +238,12 @@ return [
 	|
 	*/
 	'database' => [
-		'version' => '1.0.1',
+		'version' => '1.0.4',
 		'delete_tables_on_uninstall' => true,
 		'delete_options_on_uninstall' => true,
 		'tables' => [
+			DatabaseSyncService::get_table_name(false) => DatabaseSyncService::get_table_definition(),
+
 
 /*			'user_activity_log' => "CREATE TABLE {table_name} (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,

@@ -159,7 +159,7 @@ abstract class AbstractAdminPage implements AdminPage  {
 	 */
 	protected function on_admin_menu_added(): void
 	{
-		$assets = array_merge($this->create_assets(), $this->assets);;
+		$assets = array_merge($this->create_assets(), $this->assets);
 
 		// Only register assets if we're on this specific page
 		if ($this->is_current_page() && !empty($assets)) {

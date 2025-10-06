@@ -1,0 +1,70 @@
+/**
+ * Schedule Toggle Styles
+ * 
+ * Styles for disabled schedule-dependent fields
+ */
+
+/* General disabled field styling */
+.schedule-disabled,
+.wm-schedule-interval.disabled,
+.wm-schedule-dependent.disabled,
+[data-schedule-state="disabled"] {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Container styling for disabled fields */
+.disabled-field,
+.schedule-disabled-field,
+[data-schedule-state="disabled"] {
+    opacity: 0.6;
+}
+
+.disabled-field label,
+.schedule-disabled-field label {
+    color: #666;
+}
+
+.disabled-field .description,
+.schedule-disabled-field .description {
+    color: #999;
+}
+
+/* WordPress admin table row styling */
+tr.disabled-field,
+tr.schedule-disabled-field,
+tr[data-schedule-state="disabled"] {
+    background-color: #f9f9f9;
+}
+
+tr.disabled-field th,
+tr.disabled-field td,
+tr.schedule-disabled-field th,
+tr.schedule-disabled-field td,
+tr[data-schedule-state="disabled"] th,
+tr[data-schedule-state="disabled"] td {
+    opacity: 0.6;
+}
+
+/* Transition effects for smooth enable/disable */
+.wm-schedule-interval,
+.wm-schedule-dependent,
+[data-schedule-dependent] {
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* Visual indicator for schedule-dependent fields */
+[data-schedule-dependent]::before {
+    content: "";
+    display: inline-block;
+    width: 3px;
+    height: 100%;
+    background-color: #0073aa;
+    margin-right: 5px;
+    opacity: 0.3;
+    transition: opacity 0.2s ease-in-out;
+}
+
+[data-schedule-state="enabled"][data-schedule-dependent]::before {
+    opacity: 0.6;
+}

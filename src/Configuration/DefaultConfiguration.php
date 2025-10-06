@@ -11,11 +11,13 @@ class DefaultConfiguration implements Configuration
 	private bool $loaded = false;
 	private string $plugin_path;
 	private string $framework_path;
+	private ?string $custom_config_path = null;
 
-	public function __construct(PluginCore $core)
+	public function __construct(PluginCore $core, ?string $custom_config_path = null)
 	{
 		$this->plugin_path = $core->get_plugin_base_dir();
 		$this->framework_path = dirname(__DIR__, 2); // Go up to plugin-base root
+		$this->custom_config_path = $custom_config_path;
 	}
 
 	/**
@@ -31,11 +33,19 @@ class DefaultConfiguration implements Configuration
 		$framework_config = $this->loadConfigFile($this->framework_path . '/config/plugin.config.php');
 
 		// 2. Load plugin-specific config (if exists)
-		$plugin_config = $this->loadConfigFile($this->plugin_path . '/config/plugin.config.php');
+		if ($this->custom_config_path) {
+			// Use custom config path if specified
+			$plugin_config = $this->loadConfigFile($this->custom_config_path);
+			$config_dir = dirname($this->custom_config_path);
+		} else {
+			// Use default plugin config path
+			$plugin_config = $this->loadConfigFile($this->plugin_path . '/config/plugin.config.php');
+			$config_dir = $this->plugin_path . '/config';
+		}
 
 		// 3. Load environment-specific config (if exists)
 		$environment = $this->determineEnvironment();
-		$env_config = $this->loadConfigFile($this->plugin_path . "/config/plugin.{$environment}.php");
+		$env_config = $this->loadConfigFile($config_dir . "/plugin.{$environment}.php");
 
 		// 4. Merge configurations (plugin overrides framework, environment overrides all)
 		$this->config = $this->mergeConfigs($framework_config, $plugin_config, $env_config);
@@ -191,6 +201,25 @@ class DefaultConfiguration implements Configuration
 	public function getLoggingConfig(): array
 	{
 		return $this->get('logging', []);
+	}
+
+	/**
+	 * Set custom config file path
+	 * Note: This will reset the loaded state, so config will be reloaded on next access
+	 */
+	public function setCustomConfigPath(string $config_path): void
+	{
+		$this->custom_config_path = $config_path;
+		$this->loaded = false; // Force reload with new config path
+		$this->config = []; // Clear existing config
+	}
+
+	/**
+	 * Get the current custom config path
+	 */
+	public function getCustomConfigPath(): ?string
+	{
+		return $this->custom_config_path;
 	}
 
 }

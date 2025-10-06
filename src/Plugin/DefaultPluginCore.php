@@ -38,12 +38,13 @@ class DefaultPluginCore implements PluginCore
      * Constructor
      *
      * @param string $plugin_file The main plugin file path
+     * @param string|null $custom_config_path Optional path to custom config file
      */
-    public function __construct(string $plugin_file)
+    public function __construct(string $plugin_file, ?string $custom_config_path = null)
     {
 	    $this->plugin_file = $plugin_file;
 	    $this->metadata = new DefaultPluginMetadata($plugin_file);
-	    $this->config = new DefaultConfiguration($this);
+	    $this->config = new DefaultConfiguration($this, $custom_config_path);
 		$this->component_manager = new DefaultComponentManager();
 	    $this->setup_container();
     }

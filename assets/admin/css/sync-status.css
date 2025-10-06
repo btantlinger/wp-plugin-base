@@ -1,0 +1,238 @@
+.sync-progress-panel {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-left: 4px solid #00a0d2;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    margin: 20px 0;
+    padding: 20px;
+}
+
+.sync-status-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.sync-status-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.sync-status {
+    padding: 4px 12px;
+    border-radius: 3px;
+    font-weight: bold;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.sync-status.running {
+    background-color: #cce5ff;
+    color: #004085;
+}
+
+.sync-status.completed {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.sync-status.cancelled {
+    background-color: #ffeeba;
+    color: #856404;
+}
+
+.sync-status.failed {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.progress-container {
+    _margin-bottom: 15px;
+}
+
+.progress-bar {
+    background-color: #f0f0f1;
+    border-radius: 3px;
+    height: 20px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.progress-fill {
+    background: linear-gradient(90deg, #00a0d2, #0073aa);
+    height: 100%;
+    transition: width 0.3s ease;
+    border-radius: 3px;
+}
+
+.progress-text {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #646970;
+}
+
+.sync-details {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.sync-stats {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.sync-detail-item {
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+}
+
+.sync-detail-item strong {
+    color: #1d2327;
+    margin-right: 5px;
+}
+
+.sync-action {
+    padding: 5px 0;
+}
+
+@media (max-width: 782px) {
+    .sync-details {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
+
+
+/* Status badges */
+.sync-status {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+.status-completed {
+    background-color: #d4edda;
+    color: #155724;
+}
+.status-running {
+    background-color: #cce5ff;
+    color: #004085;
+}
+.status-failed {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+.status-cancelled {
+    background-color: #ffeeba;
+    color: #856404;
+}
+
+/* Error message styling */
+.error-message {
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Cancel button styling */
+.cancel-sync-btn {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+.cancel-sync-btn:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+    color: white;
+}
+
+
+
+
+/* Column widths */
+.sync-history-wrap .wp-list-table .column-id { width: 5%; }
+.sync-history-wrap .wp-list-table .column-sync_type { width: 8%; }
+.sync-history-wrap .wp-list-table .column-status { width: 8%; }
+.sync-history-wrap .wp-list-table .column-started_at,
+.sync-history-wrap .wp-list-table .column-completed_at { width: 12%; }
+.sync-history-wrap .wp-list-table .column-duration_seconds { width: 8%; }
+.sync-history-wrap .wp-list-table .column-total_items,
+.sync-history-wrap .wp-list-table .column-synced_items,
+.sync-history-wrap .wp-list-table .column-failed_items { width: 7%; text-align: center; }
+.sync-history-wrap .wp-list-table .column-triggered_by { width: 10%; }
+.sync-history-wrap .wp-list-table .column-error_message { width: 18%; }
+.sync-history-wrap .wp-list-table .column-actions { width: 10%; }
+
+/* Status badges */
+.sync-status {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+.status-completed {
+    background-color: #d4edda;
+    color: #155724;
+}
+.status-running {
+    background-color: #cce5ff;
+    color: #004085;
+}
+.status-failed {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+.status-cancelled {
+    background-color: #f0f0f0;
+    color: #6c757d;
+}
+
+/* Error message styling */
+.error-message {
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Cancel button styling */
+.cancel-sync-btn {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+.cancel-sync-btn:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+    color: white;
+}
+
+/* Delete button styling */
+.delete-sync-btn {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+    margin-left: 5px;
+}
+.delete-sync-btn:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+    color: white;
+}
+
+/* Action buttons container */
+.sync-actions {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}

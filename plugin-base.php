@@ -24,6 +24,7 @@ if (!defined('ABSPATH')) {
 // Load Composer autoloader
 require_once plugin_dir_path(__FILE__) . 'vendor/autoload.php';
 
-\WebMoves\PluginBase\Examples\TestPlugin::init_plugin(__FILE__);
+$config_path = plugin_dir_path(__FILE__) . 'examples/test-plugin/config/plugin.config.php';
+\WebMoves\PluginBase\Examples\TestPlugin::init_plugin(__FILE__, $config_path);
 
 

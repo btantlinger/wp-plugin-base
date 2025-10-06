@@ -10,7 +10,7 @@ use WebMoves\PluginBase\Forms\FormControllerSubmissionHandler;
 use WebMoves\PluginBase\Forms\SettingsAPIFormRenderer;
 use WebMoves\PluginBase\Forms\SettingsAPISubmissionHandler;
 use WebMoves\PluginBase\Pages\AbstractSettingsPage;
-use WebMoves\PluginBase\Settings\FormControllerSettingsBuilder;
+use WebMoves\PluginBase\Settings\GlobalSyncSettings;
 
 class TestAbstractSettingsPage extends \WebMoves\PluginBase\Pages\AbstractSettingsPage {
 
@@ -20,20 +20,19 @@ class TestAbstractSettingsPage extends \WebMoves\PluginBase\Pages\AbstractSettin
 
 	private string $text_domain;
 
-	public function __construct(PluginCore $core, string $pageTitle, string $menuTitle, string $parent_slug) {
+	public function __construct(PluginCore $core, array $settings_providers = []) {
 		$factory = $core->get(SettingsManagerFactory::class);
-		$this->page_title = $pageTitle;
-		$this->menu_title = $menuTitle;
+		$this->page_title = "Test Plugin Base Settings";
+		$this->menu_title =  "Settings";
 		$this->text_domain = $core->get_metadata()->get_text_domain();
 
 		$providers = [
-			new DemoSettingsProvider($factory->create('test_plugin_demo_settings'), $core->get_metadata()),
-			new ApiSettingsProvider($factory->create('test_plugin_api_settings'), $core->get_metadata()),
+			//new DemoSettingsProvider($factory->create('test_plugin_demo_settings'), $core->get_metadata()),
+			//new ApiSettingsProvider($factory->create('test_plugin_api_settings'), $core->get_metadata()),
 		];
+		$providers = array_merge($providers, $settings_providers);
 
-		$page_id = 'test-plugin-settings';
-
-		//$form_handler = new SettingsAPISubmissionHandler($core, "test_plugin_settings", $page_id, $providers);
+		$page_id = MainPage::PAGE_SLUG . '-settings';
 
 		$form_handler = new FormControllerSubmissionHandler($core, $providers, $page_id);
 
@@ -41,14 +40,14 @@ class TestAbstractSettingsPage extends \WebMoves\PluginBase\Pages\AbstractSettin
 
 		$form = new DefaultSettingsForm($form_handler, $form_renderer, $page_id);
 
-		parent::__construct($core, $form, $parent_slug);
+		parent::__construct($core, $form, MainPage::PAGE_SLUG);
 	}
 
 	public function get_page_title(): string {
-		return __($this->page_title, $this->text_domain);
+		return $this->page_title;
 	}
 
 	public function get_menu_title(): string {
-		return __($this->menu_title, $this->text_domain);
+		return $this->menu_title;
 	}
 }

@@ -111,6 +111,7 @@ class PluginBase {
 	 * once from your main plugin file to bootstrap the entire plugin system.
 	 *
 	 * @param string $plugin_file Absolute path to the main plugin file (__FILE__ from main plugin)
+	 * @param string|null $custom_config_path Optional path to custom config file
 	 * @return static The plugin instance
 	 * @throws \LogicException If plugin is already initialized
 	 *
@@ -118,14 +119,17 @@ class PluginBase {
 	 * ```php
 	 * // In your main plugin file
 	 * MyPlugin::init_plugin(__FILE__);
+	 * 
+	 * // Or with custom config
+	 * MyPlugin::init_plugin(__FILE__, '/path/to/custom/config.php');
 	 * ```
 	 */
-	public static function init_plugin(string $plugin_file): static {
+	public static function init_plugin(string $plugin_file, ?string $custom_config_path = null): static {
 		$class = static::class;
 		if(isset(static::$instances[$class])) {
 			throw new \LogicException('Plugin already initialized');
 		}
-		$core = static::create_core($plugin_file);
+		$core = static::create_core($plugin_file, $custom_config_path);
 		static::$instances[$class] = new static($core);
 		return static::$instances[$class];
 	}
@@ -158,20 +162,21 @@ class PluginBase {
 	 * By default, it creates a DefaultPluginCore instance.
 	 * 
 	 * @param string $plugin_file Path to the main plugin file
+	 * @param string|null $custom_config_path Optional path to custom config file
 	 * @return PluginCore The plugin core instance
 	 * 
 	 * @example
 	 * ```php
 	 * // Override to use custom core
-	 * protected static function create_core(string $plugin_file): PluginCore
+	 * protected static function create_core(string $plugin_file, ?string $custom_config_path = null): PluginCore
 	 * {
-	 *     return new MyCustomPluginCore($plugin_file);
+	 *     return new MyCustomPluginCore($plugin_file, $custom_config_path);
 	 * }
 	 * ```
 	 */
-	protected static function create_core(string $plugin_file): PluginCore
+	protected static function create_core(string $plugin_file, ?string $custom_config_path = null): PluginCore
 	{
-		return new DefaultPluginCore($plugin_file);
+		return new DefaultPluginCore($plugin_file, $custom_config_path);
 	}
 
 	/**

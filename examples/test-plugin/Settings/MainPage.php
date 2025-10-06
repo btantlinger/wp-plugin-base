@@ -6,17 +6,20 @@ use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 use WebMoves\PluginBase\Pages\AbstractAdminPage;
 
 
+
 class MainPage extends AbstractAdminPage {
+
+	const PAGE_SLUG = 'test-plugin-base';
 
 	private string $menu_title;
 	private string $page_title;
 
 	private $text_domain;
 
-	public function __construct(PluginCore $core, string $page_slug, string $page_title, string $menu_title) {
-		parent::__construct($core, $page_slug, null);
-		$this->page_title = $page_title;
-		$this->menu_title = $menu_title;
+	public function __construct(PluginCore $core) {
+		parent::__construct($core, self::PAGE_SLUG, null);
+		$this->page_title = ('Test Plugin Base');
+		$this->menu_title = ('Test Plugin');
 		$this->text_domain = $core->get_metadata()->get_text_domain();
 	}
 
@@ -35,11 +38,11 @@ class MainPage extends AbstractAdminPage {
 	}
 
 	public function get_page_title(): string {
-		return __($this->page_title, $this->text_domain);
+		return $this->page_title;
 	}
 
 	public function get_menu_title(): string {
-		return __($this->menu_title, $this->text_domain);
+		return $this->menu_title;
 	}
 
 	protected function create_assets(): array {
