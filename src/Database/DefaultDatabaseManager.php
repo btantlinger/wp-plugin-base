@@ -124,9 +124,9 @@ class DefaultDatabaseManager implements DatabaseManager
     protected PluginCore $core;
     
     /**
-     * Cache for database version check to avoid repeated queries
+     * Cache for database version check to avoid repeated queries (per instance)
      */
-    private static ?bool $is_current_cached = null;
+    private ?bool $is_current_cached = null;
 
 
 
@@ -298,8 +298,8 @@ class DefaultDatabaseManager implements DatabaseManager
      */
     public function check_and_upgrade(): void
     {
-        // Clear static cache to ensure fresh check
-        self::$is_current_cached = null;
+        // Clear instance cache to ensure fresh check
+        $this->is_current_cached = null;
         
         $installed_version = get_option($this->version_option_name);
         
@@ -329,18 +329,18 @@ class DefaultDatabaseManager implements DatabaseManager
      */
     public function is_database_current(): bool
     {
-        if (self::$is_current_cached === null) {
+        if ($this->is_current_cached === null) {
             $installed_version = get_option($this->version_option_name);
-            self::$is_current_cached = ($installed_version === $this->version);
-            
+            $this->is_current_cached = ($installed_version === $this->version);
+
             $this->logger->debug("Cached database version check", [
                 'installed' => $installed_version ?: 'none',
                 'current' => $this->version,
-                'is_current' => self::$is_current_cached
+                'is_current' => $this->is_current_cached
             ]);
         }
-        
-        return self::$is_current_cached;
+
+        return $this->is_current_cached;
     }
 
     /**
@@ -382,7 +382,7 @@ class DefaultDatabaseManager implements DatabaseManager
             $this->update_version();
 
             // Clear the cached version check since we just upgraded
-            self::$is_current_cached = true;
+            $this->is_current_cached = true;
 
             // Fire post-upgrade action for external integrations
             do_action($this->hook_prefix . 'database_upgrade_complete', $old_version, $this->version, $this->core);
@@ -398,7 +398,7 @@ class DefaultDatabaseManager implements DatabaseManager
 
         } catch (\Exception $e) {
             // Clear cached version on error
-            self::$is_current_cached = null;
+            $this->is_current_cached = null;
             
             $duration = microtime(true) - $start_time;
             
@@ -515,7 +515,7 @@ class DefaultDatabaseManager implements DatabaseManager
         delete_option($this->version_option_name);
         
         // Clear cached version
-        self::$is_current_cached = null;
+        $this->is_current_cached = null;
         
         $this->logger->info("Database cleanup completed", [
             'tables_dropped' => count($dropped_tables),
