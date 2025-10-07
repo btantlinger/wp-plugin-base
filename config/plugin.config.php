@@ -165,6 +165,10 @@ return [
 				'handlers' => ['stream', 'error_log', 'console'],
 				'processors' => [],
 			],
+			'sync' => [
+				'handlers' => ['stream', 'error_log', 'console'],
+				'processors' => [],
+			],
 			// Add CLI channel
 			'cli' => [
 				'handlers' => ['console'],

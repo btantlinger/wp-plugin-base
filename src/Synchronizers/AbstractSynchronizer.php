@@ -32,7 +32,7 @@ abstract class AbstractSynchronizer implements SchedulableSynchronizer
 
     public function __construct(SyncService $syncService, PluginMetadata $metadata, SettingsManagerFactory $settings_factory)
     {
-        $this->logging_channel = 'app';
+        $this->logging_channel = 'sync';
         $this->syncService = $syncService;
         $this->metadata = $metadata;
         $this->settings = $settings_factory->create($this->get_sync_type_key());
