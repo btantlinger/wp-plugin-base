@@ -5,6 +5,7 @@ namespace WebMoves\PluginBase;
 use WebMoves\PluginBase\Contracts\Plugin\PluginCore;
 use WebMoves\PluginBase\Plugin\DefaultPluginCore;
 use WebMoves\PluginBase\Plugin\TranslationManager;
+use WebMoves\PluginBase\Logging\LoggerFactory;
 
 /**
  * Base Plugin Class
@@ -198,6 +199,10 @@ class PluginBase {
 		$text_domain = $this->core->get_text_domain();
 		TranslationManager::register_text_domain($text_domain);
 		TranslationManager::set_current_text_domain($text_domain);
+
+		// Set logger context for this plugin
+		$plugin_name = $this->core->get_plugin_name();
+		LoggerFactory::set_context($plugin_name);
 
 		$services = $this->get_services();
 		foreach ( $services as $id => $service ) {

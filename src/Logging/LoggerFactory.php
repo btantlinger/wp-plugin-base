@@ -13,9 +13,12 @@ class LoggerFactory
     private string $plugin_name;
     private array $config;
     
-    // Static reference to the factory instance for static access
-    private static ?self $instance = null;
-    
+    // Static reference to factory instances by plugin name
+    private static array $instances = [];
+
+    // Current context plugin name for static access
+    private static ?string $current_context = null;
+
     // Cache for logger instances by channel
     private array $loggers = [];
 
@@ -23,23 +26,61 @@ class LoggerFactory
     {
         $this->config = $config->get('logging', $this->get_default_config());
         $this->plugin_name = $plugin_name;
-        
-        // Auto-register this instance for static access
-        if (!self::$instance) {
-            self::$instance = $this;
+
+        // Auto-register this instance for static access using plugin name as key
+        self::$instances[$plugin_name] = $this;
+
+        // Set as current context if none is set
+        if (self::$current_context === null) {
+            self::$current_context = $plugin_name;
         }
     }
 
     /**
-     * Create/get a logger instance statically (cached)
+     * Set the current plugin context for static logger access
      */
-    public static function logger(string $channel = null): LoggerInterface
+    public static function set_context(string $plugin_name): void
     {
-        if (!self::$instance) {
-            throw new \RuntimeException('LoggerFactory has not been initialized yet');
+        if (!isset(self::$instances[$plugin_name])) {
+            throw new \RuntimeException("LoggerFactory for plugin '{$plugin_name}' has not been initialized yet");
+        }
+        self::$current_context = $plugin_name;
+    }
+
+    /**
+     * Get the current plugin context
+     */
+    public static function get_context(): ?string
+    {
+        return self::$current_context;
+    }
+
+    /**
+     * Get a factory instance by plugin name
+     */
+    public static function get_instance(string $plugin_name): ?self
+    {
+        return self::$instances[$plugin_name] ?? null;
+    }
+
+    /**
+     * Create/get a logger instance statically (cached)
+     * Optionally specify plugin_name to use a specific plugin's factory
+     */
+    public static function logger(string $channel = null, ?string $plugin_name = null): LoggerInterface
+    {
+        // Use specified plugin name, or fall back to current context
+        $plugin_name = $plugin_name ?? self::$current_context;
+
+        if ($plugin_name === null) {
+            throw new \RuntimeException('LoggerFactory context not set. Call LoggerFactory::set_context() or pass plugin_name parameter.');
         }
 
-        return self::$instance->create($channel);
+        if (!isset(self::$instances[$plugin_name])) {
+            throw new \RuntimeException("LoggerFactory for plugin '{$plugin_name}' has not been initialized yet");
+        }
+
+        return self::$instances[$plugin_name]->create($channel);
     }
 
     /**

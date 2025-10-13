@@ -160,8 +160,8 @@ class DatabaseSyncService implements SyncService
                 'synced_items' => 0,
                 'failed_items' => 0,
                 'duration_seconds' => 0,
-                'started_at' => current_time('mysql'),
-                'updated_at' => current_time('mysql'),
+                'started_at' => current_time('mysql', true),
+                'updated_at' => current_time('mysql', true),
                 'sync_details' => json_encode(array_merge($details, ['triggered_by' => $triggeredBy])),
                 'triggered_by' => $triggeredBy
             ],
@@ -178,7 +178,7 @@ class DatabaseSyncService implements SyncService
             $this->table_name,
             [
                 'total_items' => $totalItemsToSync,
-                'updated_at' => current_time('mysql')
+                'updated_at' => current_time('mysql', true)
             ],
             ['id' => $id],
             ['%d', '%s'],
@@ -222,7 +222,7 @@ class DatabaseSyncService implements SyncService
     {
         $this->ensure_sync_exists($id);
 
-        $current_time = current_time('mysql');
+        $current_time = current_time('mysql', true);
 
         if ($status === SyncStatus::COMPLETED) {
             $this->wpdb->query(
@@ -275,8 +275,8 @@ class DatabaseSyncService implements SyncService
             $this->table_name,
             [
                 'status' => SyncStatus::FAILED->value,
-                'completed_at' => current_time('mysql'),
-                'updated_at' => current_time('mysql'),
+                'completed_at' => current_time('mysql', true),
+                'updated_at' => current_time('mysql', true),
                 'error_message' => $errorMessage,
                 'sync_details' => json_encode($details)
             ],
@@ -298,8 +298,8 @@ class DatabaseSyncService implements SyncService
                  duration_seconds = UNIX_TIMESTAMP(%s) - UNIX_TIMESTAMP(started_at)
              WHERE id = %d",
                 $increment,
-                current_time('mysql'),
-                current_time('mysql'),
+                current_time('mysql', true),
+                current_time('mysql', true),
                 $id
             )
         );
@@ -316,8 +316,8 @@ class DatabaseSyncService implements SyncService
                  duration_seconds = UNIX_TIMESTAMP(%s) - UNIX_TIMESTAMP(started_at)
              WHERE id = %d",
                 $increment,
-                current_time('mysql'),
-                current_time('mysql'),
+                current_time('mysql', true),
+                current_time('mysql', true),
                 $id
             )
         );
@@ -328,7 +328,7 @@ class DatabaseSyncService implements SyncService
     {
         $this->ensure_sync_exists($id);
 
-        $current_time = current_time('mysql');
+        $current_time = current_time('mysql', true);
 
         $this->wpdb->query(
             $this->wpdb->prepare(
@@ -348,7 +348,7 @@ class DatabaseSyncService implements SyncService
     public function set_failed(int $id, int $total): void
     {
         $this->ensure_sync_exists($id);
-        $current_time = current_time('mysql');
+        $current_time = current_time('mysql', true);
 
         $this->wpdb->query(
             $this->wpdb->prepare(
@@ -382,7 +382,7 @@ class DatabaseSyncService implements SyncService
     public function get_timed_out_syncs_for_type(int $timeoutMinutes, string $syncType): array
     {
         $timeout_seconds = $timeoutMinutes * 60;
-        $cutoff_time = date('Y-m-d H:i:s', time() - $timeout_seconds);
+        $cutoff_time = gmdate('Y-m-d H:i:s', time() - $timeout_seconds);
 
         // Find running syncs of this type that haven't been updated within the timeout period
         $rows = $this->wpdb->get_results(
@@ -405,7 +405,7 @@ class DatabaseSyncService implements SyncService
     public function get_timed_out_syncs(int $timeoutMinutes): array
     {
         $timeout_seconds = $timeoutMinutes * 60;
-        $cutoff_time = date('Y-m-d H:i:s', time() - $timeout_seconds);
+        $cutoff_time = gmdate('Y-m-d H:i:s', time() - $timeout_seconds);
 
         // Find running syncs of this type that haven't been updated within the timeout period
         $rows = $this->wpdb->get_results(
