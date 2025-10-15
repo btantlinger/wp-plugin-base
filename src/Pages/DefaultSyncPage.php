@@ -35,6 +35,20 @@ class DefaultSyncPage extends AbstractSyncPage
     private array $synchronizers;
 
     /**
+     * Page title for the sync page
+     * 
+     * @var string|null
+     */
+    private ?string $page_title;
+
+    /**
+     * Menu title for the sync page
+     * 
+     * @var string|null
+     */
+    private ?string $menu_title;
+
+    /**
      * Constructor
      * 
      * @param PluginCore $core The plugin core instance
@@ -44,6 +58,8 @@ class DefaultSyncPage extends AbstractSyncPage
      * @param FormController $delete_controller Controller for delete sync operations
      * @param string|null $parent_slug Parent menu slug (optional)
      * @param array $assets Additional assets to load (optional)
+     * @param string|null $page_title Custom page title (optional, defaults to 'Sync History')
+     * @param string|null $menu_title Custom menu title (optional, defaults to 'Sync History')
      */
     public function __construct(
         PluginCore $core,
@@ -52,9 +68,13 @@ class DefaultSyncPage extends AbstractSyncPage
         FormController $cancel_controller,
         FormController $delete_controller,
         ?string $parent_slug = null,
-        array $assets = []
+        array $assets = [],
+        ?string $page_title = null,
+        ?string $menu_title = null
     ) {
         $this->synchronizers = $synchronizers;
+        $this->page_title = $page_title;
+        $this->menu_title = $menu_title;
 
         parent::__construct($core, $page_slug, $cancel_controller, $delete_controller, $parent_slug, $assets);
     }
@@ -73,28 +93,27 @@ class DefaultSyncPage extends AbstractSyncPage
     }
 
     /**
-     * Get the default page title for this sync page
+     * Get the page title for this sync page
      * 
-     * Can be overridden by setting the page title in WordPress admin
-     * or by extending this class and overriding this method.
+     * Returns the configured title or defaults to 'Sync History'.
      * 
      * @return string The page title
      */
     public function get_page_title(): string
     {
-        return __('Sync History', $this->core->get_text_domain());
+        return $this->page_title ?? __('Sync History', $this->core->get_text_domain());
     }
 
     /**
-     * Get the default menu title for this sync page
+     * Get the menu title for this sync page
      * 
-     * Can be overridden by extending this class and overriding this method.
+     * Returns the configured title or defaults to 'Sync History'.
      * 
      * @return string The menu title
      */
     public function get_menu_title(): string
     {
-        return __('Sync History', $this->core->get_text_domain());
+        return $this->menu_title ?? __('Sync History', $this->core->get_text_domain());
     }
 
     /**

@@ -40,7 +40,8 @@ class SyncConfigurationProvider implements FeatureConfigurationProviderInterface
      *   - 'synchronizers': array of synchronizer definitions (default: empty)
      *   - 'sync_page_slug': string slug for sync page (default: 'sync-history')
      *   - 'sync_page_parent': string parent menu slug (default: null)
-     *   - 'components_order': 'before'|'after' - merge sync components before or after base components (default: 'before')
+     *   - 'sync_page_title': string page title (default: 'Sync History')
+     *   - 'sync_menu_title': string menu title (default: 'Sync History')
      * @return array The sync feature configuration
      */
     public function getConfiguration(array $options = []): array
@@ -48,6 +49,8 @@ class SyncConfigurationProvider implements FeatureConfigurationProviderInterface
         $synchronizers = $options['synchronizers'] ?? [];
         $syncPageSlug = $options['sync_page_slug'] ?? 'sync-history';
         $syncPageParent = $options['sync_page_parent'] ?? null;
+        $syncPageTitle = $options['sync_page_title'] ?? null;
+        $syncMenuTitle = $options['sync_menu_title'] ?? null;
 
         // Generate sync events for each synchronizer
         $syncEvents = [];
@@ -110,7 +113,10 @@ class SyncConfigurationProvider implements FeatureConfigurationProviderInterface
                         get('synchronizers'),
                         get(CancelSyncController::class),
                         get(DeleteSyncController::class),
-                        $syncPageParent
+                        $syncPageParent,
+                        [],  // assets
+                        $syncPageTitle,
+                        $syncMenuTitle
                     ),
 
 	            // Background task handler
