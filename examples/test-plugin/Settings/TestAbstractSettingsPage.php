@@ -20,7 +20,7 @@ class TestAbstractSettingsPage extends \WebMoves\PluginBase\Pages\AbstractSettin
 
 	private string $text_domain;
 
-	public function __construct(PluginCore $core, array $settings_providers = []) {
+	public function __construct(PluginCore $core, array $settings_providers = [], ?string $parent_slug = null) {
 		$factory = $core->get(SettingsManagerFactory::class);
 		$this->page_title = "Test Plugin Base Settings";
 		$this->menu_title =  "Settings";
@@ -32,7 +32,7 @@ class TestAbstractSettingsPage extends \WebMoves\PluginBase\Pages\AbstractSettin
 		];
 		$providers = array_merge($providers, $settings_providers);
 
-		$page_id = MainPage::PAGE_SLUG . '-settings';
+		$page_id = empty($parent_slug) ? 'settings' : $parent_slug . '-settings';
 
 		$form_handler = new FormControllerSubmissionHandler($core, $providers, $page_id);
 
@@ -40,7 +40,7 @@ class TestAbstractSettingsPage extends \WebMoves\PluginBase\Pages\AbstractSettin
 
 		$form = new DefaultSettingsForm($form_handler, $form_renderer, $page_id);
 
-		parent::__construct($core, $form, MainPage::PAGE_SLUG);
+		parent::__construct($core, $form, $parent_slug);
 	}
 
 	public function get_page_title(): string {

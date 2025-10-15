@@ -40,6 +40,7 @@ class SyncConfigurationProvider implements FeatureConfigurationProviderInterface
      *   - 'synchronizers': array of synchronizer definitions (default: empty)
      *   - 'sync_page_slug': string slug for sync page (default: 'sync-history')
      *   - 'sync_page_parent': string parent menu slug (default: null)
+     *   - 'components_order': 'before'|'after' - merge sync components before or after base components (default: 'before')
      * @return array The sync feature configuration
      */
     public function getConfiguration(array $options = []): array
@@ -151,91 +152,6 @@ class SyncConfigurationProvider implements FeatureConfigurationProviderInterface
                 ]
             ],
         ];
-    }
-
-    /**
-     * Merge sync configuration with base configuration
-     *
-     * This method handles intelligent merging, ensuring that:
-     * - Database tables are merged properly
-     * - Services and components arrays are merged
-     * - Existing synchronizers are preserved and new ones added
-     * - Settings providers include sync-related providers
-     *
-     * @param array $baseConfig The base configuration to merge into
-     * @param array $options Configuration options for the sync feature
-     * @return array The merged configuration
-     */
-    public function mergeConfiguration(array $baseConfig, array $options = []): array
-    {
-        $syncConfig = $this->getConfiguration($options);
-        $mergedConfig = $baseConfig;
-
-        // Merge services
-        if (!isset($mergedConfig['services'])) {
-            $mergedConfig['services'] = [];
-        }
-        $mergedConfig['services'] = array_merge($mergedConfig['services'], $syncConfig['services']);
-
-        // Merge components
-        if (!isset($mergedConfig['components'])) {
-            $mergedConfig['components'] = [];
-        }
-        $mergedConfig['components'] = array_merge($mergedConfig['components'], $syncConfig['components']);
-
-        // Merge database configuration
-        if (!isset($mergedConfig['database'])) {
-            $mergedConfig['database'] = [
-                'version' => '1.0.0',
-                'delete_tables_on_uninstall' => true,
-                'delete_options_on_uninstall' => true,
-                'tables' => []
-            ];
-        }
-
-        if (!isset($mergedConfig['database']['tables'])) {
-            $mergedConfig['database']['tables'] = [];
-        }
-
-        $mergedConfig['database']['tables'] = array_merge(
-            $mergedConfig['database']['tables'],
-            $syncConfig['database']['tables']
-        );
-
-        // Add sync-related settings providers to existing settings_providers array
-        if (isset($mergedConfig['services']['settings_providers']) && is_array($mergedConfig['services']['settings_providers'])) {
-            // Add GlobalSyncSettings to existing providers if not already present
-            $hasGlobalSync = false;
-            foreach ($mergedConfig['services']['settings_providers'] as $provider) {
-                if (is_string($provider) && strpos($provider, 'GlobalSyncSettings') !== false) {
-                    $hasGlobalSync = true;
-                    break;
-                }
-            }
-
-            if (!$hasGlobalSync) {
-                $mergedConfig['services']['settings_providers'][] = get(GlobalSyncSettings::class);
-            }
-
-            // Add all synchronizers as settings providers (since each synchronizer IS a SettingsProvider)
-            $synchronizers = $options['synchronizers'] ?? [];
-            foreach ($synchronizers as $synchronizer) {
-                // Check if this synchronizer is already in the settings providers
-                $alreadyExists = false;
-                foreach ($mergedConfig['services']['settings_providers'] as $existingProvider) {
-                    if ($existingProvider === $synchronizer) {
-                        $alreadyExists = true;
-                        break;
-                    }
-                }
-
-                if (!$alreadyExists) {
-                    $mergedConfig['services']['settings_providers'][] = $synchronizer;
-                }
-            }
-        }
-
-        return $mergedConfig;
     }
 
     /**

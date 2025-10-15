@@ -24,6 +24,8 @@ use function DI\get;
 | are added using the ConfigurationProviderFactory.
 |
 */
+
+$slug = 'test-plugin';
 $baseConfig = [
 	/*
 	|--------------------------------------------------------------------------
@@ -95,9 +97,8 @@ $baseConfig = [
 			->constructor(
 				get(PluginCore::class),
 				get('settings_providers'),
+				$slug // Will be 'test-plugin' which should match sync_page_slug
 			),
-
-
 	],
 
 	/*
@@ -125,19 +126,20 @@ $baseConfig = [
 | Enable Framework Features
 |--------------------------------------------------------------------------
 |
-| Use the ConfigurationProviderFactory to enable framework features.
-| Each feature provider handles its own configuration and merging logic.
+| Get sync configuration and deep merge it with base config.
+| Merge order controls component registration order:
+| - syncConfig first = sync components register before base components
+| - baseConfig first = base components register before sync components
 |
 */
-return ConfigurationProviderFactory::mergeFeatureConfigurations($baseConfig, ['sync'], [
-	'sync' => [
-		// Custom synchronizers for this plugin
-		'synchronizers' => [
-			get(DummySynchronizer::class),
-			get(ProductSyncDummy::class),
-		],
-		// Sync page configuration
-		'sync_page_slug' => 'test-plugin-sync',
-		'sync_page_parent' => MainPage::PAGE_SLUG, // Top-level menu item
-	]
+$syncConfig = ConfigurationProviderFactory::getFeatureConfiguration('sync', [
+	'synchronizers' => [
+		get(DummySynchronizer::class),
+		get(ProductSyncDummy::class),
+	],
+	'sync_page_slug' => $slug,
+	'sync_page_parent' => null,
 ]);
+
+// Merge sync FIRST so sync page registers before settings page (which uses it as parent)
+return ConfigurationProviderFactory::merge_configs($syncConfig, $baseConfig);

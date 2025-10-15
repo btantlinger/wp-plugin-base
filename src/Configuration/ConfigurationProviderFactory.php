@@ -33,6 +33,9 @@ class ConfigurationProviderFactory
     /**
      * Merge feature configurations into base configuration
      * 
+     * This is a convenience method that gets feature configs and merges them.
+     * For more control over merge order, use getFeatureConfiguration() and merge_configs() directly.
+     * 
      * @param array $baseConfig The base configuration array
      * @param array $enabledFeatures Array of feature names to enable
      * @param array $featureOptions Optional configuration for each feature
@@ -48,16 +51,8 @@ class ConfigurationProviderFactory
         $mergedConfig = $baseConfig;
 
         foreach ($enabledFeatures as $featureName) {
-            if (!isset(self::$providers[$featureName])) {
-                throw new \InvalidArgumentException("Unknown feature: {$featureName}");
-            }
-
-            $providerClass = self::$providers[$featureName];
-            $options = $featureOptions[$featureName] ?? [];
-
-            /** @var FeatureConfigurationProviderInterface $provider */
-            $provider = new $providerClass();
-            $mergedConfig = $provider->mergeConfiguration($mergedConfig, $options);
+            $featureConfig = self::getFeatureConfiguration($featureName, $featureOptions[$featureName] ?? []);
+            $mergedConfig = self::merge_configs($mergedConfig, $featureConfig);
         }
 
         return $mergedConfig;
@@ -129,5 +124,49 @@ class ConfigurationProviderFactory
         }
 
         self::$providers[$featureName] = $providerClass;
+    }
+
+    /**
+     * Deep merge configuration arrays, with later values overwriting earlier ones.
+     * Unlike array_merge_recursive, this doesn't create nested arrays for duplicate keys.
+     * Indexed arrays (like components, services) are concatenated in order.
+     * 
+     * @param array $array1 First configuration array
+     * @param array $array2 Second configuration array (takes precedence)
+     * @return array Merged configuration array
+     */
+    public static function merge_configs(array $array1, array $array2): array
+    {
+        $merged = $array1;
+
+        foreach ($array2 as $key => $value) {
+            if (is_array($value) && isset($merged[$key]) && is_array($merged[$key])) {
+                // If both are associative arrays, merge recursively
+                if (self::isAssociativeArray($merged[$key]) && self::isAssociativeArray($value)) {
+                    $merged[$key] = self::merge_configs($merged[$key], $value);
+                } else {
+                    // For indexed arrays (like components), concatenate them
+                    $merged[$key] = array_merge($merged[$key], $value);
+                }
+            } else {
+                $merged[$key] = $value;
+            }
+        }
+
+        return $merged;
+    }
+
+    /**
+     * Check if an array is associative (has string keys)
+     * 
+     * @param array $array Array to check
+     * @return bool True if associative, false if indexed
+     */
+    private static function isAssociativeArray(array $array): bool
+    {
+        if (empty($array)) {
+            return false;
+        }
+        return array_keys($array) !== range(0, count($array) - 1);
     }
 }
