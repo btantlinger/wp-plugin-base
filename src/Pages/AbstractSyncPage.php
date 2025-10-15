@@ -232,11 +232,7 @@ abstract class AbstractSyncPage extends AbstractAdminPage
                 <h3 class="sync-status-title"><?php echo esc_html($label); ?> Sync</h3>
                 <div class="sync-actions">
                     <span class="sync-status-badge sync-status cancelled">Not Started</span>
-                    <button type="button" class="button button-primary sync-action-button" 
-                            data-sync-type="<?php echo esc_attr($sync_type); ?>" 
-                            data-action="sync">
-                        <?php _e('Sync Now', $text_domain); ?>
-                    </button>
+
                 </div>
             </div>
 
@@ -277,6 +273,11 @@ abstract class AbstractSyncPage extends AbstractAdminPage
                         <span class="sync-stat-next-scheduled">Not scheduled</span>
                     </div>
                 </div>
+                <button type="button" class="button button-primary sync-action-button"
+                        data-sync-type="<?php echo esc_attr($sync_type); ?>"
+                        data-action="sync">
+                    <?php _e('Sync Now', $text_domain); ?>
+                </button>
             </div>
         </div>
         <?php
